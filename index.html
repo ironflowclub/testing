@@ -403,6 +403,17 @@ footer{border-top:1px solid var(--bd);padding:20px var(--pad);text-align:center;
     </div>
 
     <!-- SETUP -->
+    <div id="tab-setup" class="tab-panel hidden">
+      <div class="guide">
+        <h3>Google Sheet Setup — One Time Only</h3>
+        <ol>
+          <li>Create 4 tabs: <code>Members</code> <code>Rankings</code> <code>History</code> <code>MatchLog</code></li>
+          <li><strong>Members</strong> headers: <code>id</code> <code>name</code> <code>type</code> <code>active</code> <code>joinDate</code></li>
+          <li><strong>Rankings</strong> headers: <code>rank</code> <code>id</code> <code>name</code> <code>type</code> <code>wins</code> <code>losses</code> <code>matches</code> <code>points</code> <code>winRate</code></li>
+          <li>Extensions → Apps Script → paste Code.gs → Deploy as Web App → Anyone access</li>
+          <li>Paste your Web App URL as <code>API_URL</code> at the top of this file</li>
+        </ol>
+      </div>
       <div class="card">
         <div class="card-h"><span class="card-t">Tournament Setup</span></div>
         <div class="card-b">
@@ -531,7 +542,7 @@ footer{border-top:1px solid var(--bd);padding:20px var(--pad);text-align:center;
 
 <script>
 var API_URL  = 'https://script.google.com/macros/s/AKfycbwxT58shV0cm-IhmzvIEuBuVI2itkNfYo1nMWxg_AJyJW-jBNkAob5DsqDsm7W18w/exec';
-var ADMIN_PW = 'test123';
+var ADMIN_PW = 'ironflow2026';
 var M=[],R=[];
 var S={name:'',players:[],bracket:null,champion:null,status:'setup',log:[],undo:[],gc:1,past:[]};
 var isAdmin=false;
