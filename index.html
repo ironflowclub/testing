@@ -896,23 +896,147 @@ function generateRound3() {
   matches = matches.concat(rm);
 }
 function generateRound4() {
+  const rm = [];
+  let matchId = matches.length + 1;
+  let court = 1;
+
+  // ── Top Bracket ──
   const top = [...players.filter(p => p.bracket === 'Top')].sort(sortByPerformance);
-  const rm = []; let id = matches.length + 1; let ct = 1;
-  const labels = ['GOLD MATCH — 1st vs 2nd', 'BRONZE MATCH — 3rd vs 4th', '5th Place Match'];
-  for (let i = 0; i < Math.min(top.length - 1, 5); i += 2) {
-    if (top[i] && top[i+1]) {
-      rm.push({ id: id++, round: 4, court: ct++, player1: top[i].id, player2: top[i+1].id,
-        winner: null, completed: false, bye: false, label: labels[i/2] || (getPlacement(i+1) + ' Place Match') });
-    }
-  }
-  const bot = [...players.filter(p => p.bracket === 'Bottom')].sort(sortByPerformance);
-  for (let i = 0; i < bot.length - 1; i += 2) {
-    rm.push({ id: id++, round: 4, court: ((ct-1) % totalCourts) + 1, player1: bot[i].id, player2: bot[i+1].id,
-      winner: null, completed: false, bye: false, label: getPlacement(top.length + i + 1) + ' Place' });
-    ct++;
-  }
+  rm.push(...pairGroupForPlacement(top, 4, matchId, court, 'Top'));
+  
+  // ── Bottom Bracket ──
+  const bottom = [...players.filter(p => p.bracket === 'Bottom')].sort(sortByPerformance);
+  rm.push(...pairGroupForPlacement(bottom, 4, matchId + rm.length, court + (rm.length % totalCourts), 'Bottom'));
+
   matches = matches.concat(rm);
 }
+
+/**
+ * Pair all players in a sorted group for final placement.
+ * labelPrefix: 'Top' or 'Bottom'
+ */
+function pairGroupForPlacement(group, round, startId, startCourt, labelPrefix) {
+  const rm = [];
+  let id = startId;
+  let ct = startCourt;
+
+  // Handle possible BYE if odd number
+  if (group.length % 2 !== 0) {
+    // Give last player a bye
+    const byePlayer = group.pop();
+    byePlayer.wins++;
+    byePlayer.hasBye = true;
+    const p = players.find(x => x.id === byePlayer.id);
+    if (p) { p.wins = byePlayer.wins; p.hasBye = true; }
+    rm.push({
+      id: id++,
+      round,
+      court: null,
+      player1: byePlayer.id,
+      player2: null,
+      winner: byePlayer.id,
+      completed: true,
+      bye: true,
+      label: `${labelPrefix} BYE`
+    });
+  }
+
+  // Pair them 1vs2, 3vs4, 5vs6, ...
+  for (let i = 0; i < group.length; i += 2) {
+    const rank1 = i + 1; // e.g., 1st seed in group
+    const rank2 = i + 2;
+    let label;
+    if (labelPrefix === 'Top') {
+      if (rank1 === 1) label = '🥇 GOLD MATCH — 1st vs 2nd';
+      else if (rank1 === 3) label = '🥉 BRONZE MATCH — 3rd vs 4th';
+      else label = `Top Placement ${rank1} vs ${rank2}`;
+    } else {
+      if (rank1 === 1) label = `Bottom Final — ${rank1} vs ${rank2}`;
+      else label = `Bottom Placement ${rank1} vs ${rank2}`;
+    }
+
+    rm.push({
+      id: id++,
+      round,
+      court: ((ct - 1) % totalCourts) + 1,
+      player1: group[i].id,
+      player2: group[i + 1].id,
+      winner: null,
+      completed: false,
+      bye: false,
+      label
+    });
+    ct++;
+  }
+
+  return rm;
+}
+
+function computeFinalStandings() {
+  const round4Matches = matches.filter(m => m.round === 4);
+
+  // Split by bracket
+  const topMatches = round4Matches.filter(m => {
+    const p = players.find(x => x.id === m.player1);
+    return p && p.bracket === 'Top';
+  });
+  const botMatches = round4Matches.filter(m => {
+    const p = players.find(x => x.id === m.player1);
+    return p && p.bracket === 'Bottom';
+  });
+
+  // Sort matches by their label order (1st vs 2nd, 3rd vs 4th...)
+  topMatches.sort((a, b) => {
+    // label contains numbers, e.g., "GOLD MATCH — 1st vs 2nd" or "Top Placement 5 vs 6"
+    const aNum = parseInt(a.label.match(/\d+/)?.[0]) || 99;
+    const bNum = parseInt(b.label.match(/\d+/)?.[0]) || 99;
+    return aNum - bNum;
+  });
+  botMatches.sort((a, b) => {
+    const aNum = parseInt(a.label.match(/\d+/)?.[0]) || 99;
+    const bNum = parseInt(b.label.match(/\d+/)?.[0]) || 99;
+    return aNum - bNum;
+  });
+
+  let rank = 1;
+  const finalRanks = {};
+
+  // Process Top bracket
+  topMatches.forEach(m => {
+    if (m.bye) {
+      finalRanks[m.player1] = rank++;
+    } else {
+      const winner = m.winner;
+      const loser = winner === m.player1 ? m.player2 : m.player1;
+      finalRanks[winner] = rank++;
+      finalRanks[loser] = rank++;
+    }
+  });
+
+  // Process Bottom bracket
+  botMatches.forEach(m => {
+    if (m.bye) {
+      finalRanks[m.player1] = rank++;
+    } else {
+      const winner = m.winner;
+      const loser = winner === m.player1 ? m.player2 : m.player1;
+      finalRanks[winner] = rank++;
+      finalRanks[loser] = rank++;
+    }
+  });
+
+  // Assign finalRank to each player object
+  players.forEach(p => {
+    p.finalRank = finalRanks[p.id] || 999;
+  });
+
+  // Sort players by final rank
+  const finalStandings = [...players].sort((a, b) => a.finalRank - b.finalRank);
+
+  return finalStandings;
+}
+
+
 function getNextCourt(existing) {
   const play = existing.filter(m => !m.bye);
   if (!play.length) return 1;
@@ -1002,23 +1126,36 @@ function askFinish() {
   });
 }
 function showFinalSummary() {
-  const sorted = [...players].sort(sortByPerformance);
+  const finalStandings = computeFinalStandings();
+  const podium = finalStandings.slice(0, 3);
   const cls = ['first', 'second', 'third'];
   const lbl = ['Champion', 'Runner Up', '3rd Place'];
+
   let html = '<div class="final-podium">';
-  for (let i = 0; i < Math.min(3, sorted.length); i++) {
-    const p = sorted[i]; const tot = p.wins + p.losses;
-    const r = tot > 0 ? Math.round((p.wins / tot) * 100) : 0;
-    html += '<div class="podium-card ' + cls[i] + '"><div class="podium-rank">' + (i+1) + '</div><div><div class="podium-name">' + p.name + '</div><div class="podium-label">' + lbl[i] + ' — Rating: ' + r + '</div></div></div>';
-  }
-  html += '</div><div class="final-stats-title">All Players</div>';
-  sorted.forEach((p, i) => {
-    const tot = p.wins + p.losses; const r = tot > 0 ? Math.round((p.wins / tot) * 100) : 0;
-    html += '<div class="final-player-row"><span class="final-player-name">' + (i+1) + '. ' + p.name + '</span><span class="final-player-stats"><span>W: ' + p.wins + '</span><span>L: ' + p.losses + '</span><span>R: ' + r + '</span></span></div>';
+  podium.forEach((p, i) => {
+    html += `<div class="podium-card ${cls[i]}">
+      <div class="podium-rank">${p.finalRank}</div>
+      <div>
+        <div class="podium-name">${p.name}</div>
+        <div class="podium-label">${lbl[i]}</div>
+      </div>
+    </div>`;
   });
+  html += '</div><div class="final-stats-title">Full Rankings</div>';
+  finalStandings.forEach(p => {
+    html += `<div class="final-player-row">
+      <span class="final-player-name">${p.finalRank}. ${p.name}</span>
+      <span class="final-player-stats">
+        <span>W: ${p.wins}</span>
+        <span>L: ${p.losses}</span>
+      </span>
+    </div>`;
+  });
+
   document.getElementById('finalSummary').innerHTML = html;
   document.getElementById('finalOverlay').classList.remove('hidden');
 }
+
 function closeFinalOverlay() { document.getElementById('finalOverlay').classList.add('hidden'); }
 function viewFinalBracket() { closeFinalOverlay(); switchToTab('bracket'); renderBracket(); }
 function updateFinishButton() {
@@ -1089,18 +1226,64 @@ function renderMatches() {
 function switchRound(r) { viewingRound = r; renderMatches(); }
 
 function renderStandings() {
+  const filterBar = document.querySelector('.filter-bar');
+  if (filterBar) {
+    filterBar.style.display = tournamentFinished ? 'none' : 'flex';
+  }
+
   const container = document.getElementById('standingsBody');
-  let sorted = [...players].sort(sortByPerformance);
-  if (currentFilter !== 'all') sorted = sorted.filter(p => p.bracket === currentFilter);
-  if (sorted.length === 0) { container.innerHTML = '<div class="empty-state">No standings yet</div>'; return; }
+  let sorted;
+
+  if (tournamentFinished) {
+    sorted = computeFinalStandings();
+  } else {
+    sorted = [...players].sort(sortByPerformance);
+    if (currentFilter !== 'all') {
+      sorted = sorted.filter(p => p.bracket === currentFilter);
+    }
+  }
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="empty-state">No standings yet</div>';
+    return;
+  }
+
   const pc = ['gold', 'silver', 'bronze'];
+
   container.innerHTML = sorted.map((p, i) => {
-    const tot = p.wins + p.losses; const r = tot > 0 ? Math.round((p.wins / tot) * 100) : 0;
-    const rc = pc[i] || '';
-    const bh = p.bracket ? '<span class="bracket-label ' + p.bracket.toLowerCase() + '">' + p.bracket + '</span>' : '';
-    return '<div class="standing-card ' + rc + '"><div class="rank-num">' + (i+1) + '</div><div class="standing-info"><div class="standing-name">' + p.name + ' ' + bh + '</div><div class="standing-stats"><span class="stat">Won: <span class="stat-value wins">' + p.wins + '</span></span><span class="stat">Lost: <span class="stat-value losses">' + p.losses + '</span></span><span class="stat">Played: <span class="stat-value">' + tot + '</span></span></div></div><div class="standing-rating"><div class="rating-value">' + r + '</div><div class="rating-label">Rating</div></div></div>';
+    const displayRank = tournamentFinished ? p.finalRank : (i + 1);
+    const tot = p.wins + p.losses;                                    // ← FIXED
+    const pts = calcPoints(p);
+    const byeWins = matches.filter(m => m.bye && m.player1 === p.id).length;
+    const rc = displayRank <= 3 ? pc[displayRank - 1] : '';
+
+    const bh = p.bracket
+      ? '<span class="bracket-label ' + p.bracket.toLowerCase() + '">'
+        + p.bracket + '</span>'
+      : '';
+
+    const byeBadge = byeWins > 0
+      ? '<span style="font-size:10px;color:var(--ink3);font-weight:600;margin-left:4px">(had bye)</span>'
+      : '';
+
+    return '<div class="standing-card ' + rc + '">'
+      + '<div class="rank-num">' + displayRank + '</div>'
+      + '<div class="standing-info">'
+      +   '<div class="standing-name">' + p.name + ' ' + bh + byeBadge + '</div>'
+      +   '<div class="standing-stats">'
+      +     '<span class="stat">Won: <span class="stat-value wins">' + p.wins + '</span></span>'
+      +     '<span class="stat">Lost: <span class="stat-value losses">' + p.losses + '</span></span>'
+      +     '<span class="stat">Played: <span class="stat-value">' + tot + '</span></span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="standing-rating">'
+      +   '<div class="rating-value">' + pts + '</div>'
+      +   '<div class="rating-label">PTS</div>'
+      + '</div>'
+      + '</div>';
   }).join('');
 }
+
 function filterStandings(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
@@ -1128,7 +1311,9 @@ function renderBracket() {
   }
   let html = '';
   if (tournamentFinished) {
-    const champ = [...players].sort(sortByPerformance)[0];
+    const champ = tournamentFinished
+      ? computeFinalStandings()[0]
+      : [...players].sort(sortByPerformance)[0];
     if (champ) {
       const today = new Date().toISOString().slice(0, 10);
       html += '<div class="champ"><div class="champ-av">' + getInitials(champ.name) + '</div><p class="champ-k">Tournament Champion</p><p class="champ-n">' + champ.name + '</p><p class="champ-s">IronFlow Tournament &middot; ' + today + '</p></div>';
@@ -1221,13 +1406,48 @@ function renderAll() {
   updateStatusBar(); updateGenerateButton(); updateFinishButton();
 }
 function getPlayerName(id) { const p = players.find(p => p.id === id); return p ? p.name : 'Unknown'; }
-function sortByPerformance(a, b) {
-  const tA = a.wins + a.losses, tB = b.wins + b.losses;
-  const rA = tA > 0 ? a.wins / tA : 0, rB = tB > 0 ? b.wins / tB : 0;
-  if (b.wins !== a.wins) return b.wins - a.wins;
-  if (rB !== rA) return rB - rA;
-  return a.losses - b.losses;
+// ── POINTS CALCULATOR ──
+function calcPoints(player) {
+  let pts = 0;
+  matches.forEach(m => {
+    const inMatch = m.player1 === player.id || m.player2 === player.id;
+    if (!inMatch) return;
+
+    if (m.bye) {
+      pts += 1;                              // bye = 1 pt
+    } else if (m.winner === player.id) {
+      pts += m.round === 4 ? 5 : 3;         // final win = 5, normal win = 3
+    } else if (m.completed) {
+      pts += 1;                             // loss = 1 pt (showed up, played)
+    }
+  });
+  return pts;
 }
+
+// ── FAIR RATING (0-100 display) ──
+function calcRating(player) {
+  const byeWins   = matches.filter(m => m.bye && m.player1 === player.id).length;
+  const realWins  = player.wins - byeWins;
+  const realPlayed= player.wins + player.losses - byeWins;
+  if (realPlayed === 0) return 0;
+
+  const winRate   = realWins / realPlayed;
+  const confidence= Math.min(realPlayed / 4, 1);
+  const rating    = (winRate * confidence) + (0.5 * (1 - confidence));
+  return Math.round(rating * 100);
+}
+
+
+
+// ── SORT DURING TOURNAMENT (pre-Round 4) ──
+function sortByPerformance(a, b) {
+  const ptsA = calcPoints(a);
+  const ptsB = calcPoints(b);
+  if (ptsB !== ptsA) return ptsB - ptsA;      // 1. Most points
+  return a.losses - b.losses;                  // 2. Fewest losses (tiebreak)
+}
+
+
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
