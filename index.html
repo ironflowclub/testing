@@ -458,8 +458,12 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,251,253,.92);backdro
       ⚠️ <span><strong>Keep this tab open</strong> — auto-saves every 30 sec.</span>
     </div>
     <div class="input-row">
-      <input type="text" id="playerNameInput" placeholder="Enter player name" onkeydown="if(event.key==='Enter') addPlayer()">
-      <button class="btn-add" onclick="addPlayer()">Add</button>
+        <input type="text" id="playerNameInput" placeholder="Enter Team name" onkeydown="if(event.key==='Enter') addPlayer()">
+        <button class="btn-add" onclick="addPlayer()">Add</button>
+    </div>
+    <div class="input-row" style="margin-bottom:16px;">
+        <input type="text" id="member1Input" placeholder="Player 1 name">
+        <input type="text" id="member2Input" placeholder="Player 2 name">
     </div>
     <div class="action-row">
       <button class="btn-outline" onclick="loadPresetPlayers()">Load Demo</button>
@@ -615,6 +619,14 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,251,253,.92);backdro
 
 <script src="auth-guard.js"></script>
 <script>
+
+function makePlayer(id, name) {
+  return { id: id, name: name, wins: 0, losses: 0,
+           bracket: null, hasBye: false, opponents: [],
+           member1: '', member2: '' };
+}
+
+
 /* =====================================================
    CONSTANTS & STATE
 ===================================================== */
@@ -875,9 +887,25 @@ function openPickSheet(matchId) {
   if (!p1 || !p2) return;
   _pickMatchId = matchId; _pickP1id = p1.id; _pickP2id = p2.id;
   document.getElementById('pickTitle').textContent = 'Court ' + (m.court || '?') + ' — Who won?';
-  document.getElementById('pickSub').textContent   = p1.name + ' vs ' + p2.name;
-  document.getElementById('pickName1').textContent = p1.name;
-  document.getElementById('pickName2').textContent = p2.name;
+  var p1members = (p1.member1 || p1.member2) ? ' (' + (p1.member1||'?') + ' & ' + (p1.member2||'?') + ')' : '';
+  var p2members = (p2.member1 || p2.member2) ? ' (' + (p2.member1||'?') + ' & ' + (p2.member2||'?') + ')' : '';
+  document.getElementById('pickSub').textContent = p1.name + p1members + ' vs ' + p2.name + p2members;
+var p1mem = (p1.member1 || p1.member2) ? p1.member1 + ' & ' + p1.member2 : '';
+var p2mem = (p2.member1 || p2.member2) ? p2.member1 + ' & ' + p2.member2 : '';
+
+document.getElementById('pickName1').textContent = p1.name;
+document.getElementById('pickName2').textContent = p2.name;
+
+// inject member names below team name inside each button
+document.getElementById('pickBtn1').innerHTML =
+  '<span id="pickName1" class="pick-name">' + esc(p1.name) + '</span>'
+  + (p1mem ? '<span style="font-size:11px;color:var(--ink3);font-weight:500;">' + esc(p1mem) + '</span>' : '')
+  + '<span class="pick-btn-hint">Tap to select</span>';
+
+document.getElementById('pickBtn2').innerHTML =
+  '<span id="pickName2" class="pick-name">' + esc(p2.name) + '</span>'
+  + (p2mem ? '<span style="font-size:11px;color:var(--ink3);font-weight:500;">' + esc(p2mem) + '</span>' : '')
+  + '<span class="pick-btn-hint">Tap to select</span>';
   document.getElementById('pickBtn1').className    = 'pick-btn';
   document.getElementById('pickBtn2').className    = 'pick-btn';
   document.getElementById('pickOverlay').classList.remove('hidden');
@@ -946,13 +974,22 @@ function syncCourtsUI() {
 ===================================================== */
 function addPlayer() {
   if (tournamentStarted) return showToast('Tournament already started', true);
-  var input = document.getElementById('playerNameInput');
-  var name  = input.value.trim();
-  if (!name) return showToast('Enter a name', true);
+  var input   = document.getElementById('playerNameInput');
+  var m1input = document.getElementById('member1Input');
+  var m2input = document.getElementById('member2Input');
+  var name    = input.value.trim();
+  var m1      = m1input ? m1input.value.trim() : '';
+  var m2      = m2input ? m2input.value.trim() : '';
+  if (!name) return showToast('Enter a team name', true);
   if (players.some(function(p) { return p.name.toLowerCase() === name.toLowerCase(); }))
     return showToast('Already exists', true);
-  players.push(makePlayer(players.length + 1, name));
+  var p    = makePlayer(players.length + 1, name);
+  p.member1 = m1;
+  p.member2 = m2;
+  players.push(p);
   input.value = '';
+  if (m1input) m1input.value = '';
+  if (m2input) m2input.value = '';
   input.focus();
   saveState();
   renderPlayers();
@@ -1057,6 +1094,7 @@ function renderPlayers() {
       + '<div class="player-info-left">'
       + '<span class="player-number">#' + p.id + '</span>'
       + '<span class="player-name">' + esc(p.name) + '</span>'
+      + ((p.member1 || p.member2) ? '<span style="font-size:11px;color:var(--ink3);margin-left:8px;font-weight:500;">' + esc(p.member1 || '?') + ' & ' + esc(p.member2 || '?') + '</span>' : '')
       + '</div>'
       + '<div class="player-info-right">' + right + '</div>'
       + '</li>';
@@ -1774,9 +1812,19 @@ function renderCourtsGrid(liveM, queuedM) {
       html += '<span class="court-dot"></span>';
       html += '</div>';
       html += '<div class="court-match">';
-      html += '<div class="court-player">' + esc(p1name) + '</div>';
+      
       html += '<div class="court-vs">VS</div>';
-      html += '<div class="court-player">' + esc(p2name) + '</div>';
+      var p1obj = getPlayer(lm.player1);
+var p2obj = getPlayer(lm.player2);
+html += '<div class="court-player">' + esc(p1name)
+      + ((p1obj && (p1obj.member1 || p1obj.member2))
+        ? '<div style="font-size:10px;font-weight:500;color:var(--ink3);">' + esc(p1obj.member1||'?') + ' & ' + esc(p1obj.member2||'?') + '</div>'
+        : '') + '</div>';
+html += '<div class="court-vs">VS</div>';
+html += '<div class="court-player">' + esc(p2name)
+      + ((p2obj && (p2obj.member1 || p2obj.member2))
+        ? '<div style="font-size:10px;font-weight:500;color:var(--ink3);">' + esc(p2obj.member1||'?') + ' & ' + esc(p2obj.member2||'?') + '</div>'
+        : '') + '</div>';
       html += '</div>';
       html += '<div class="court-timer">';
       html += '<span class="court-timer-val">00:00</span>';
@@ -2457,12 +2505,13 @@ function exportTournamentCSV() {
   var fs    = computeFinalStandings();
   var today = new Date().toISOString().slice(0,10);
   var csv   = 'IronFlow Tournament\nDate,' + new Date().toLocaleString() + '\nPlayers,' + players.length + '\n\n';
-  csv += 'RANK,NAME,BRACKET,W,L,WIN%,POINTS\n';
-  fs.forEach(function(p) {
+  csv += 'RANK,NAME,MEMBER1,MEMBER2,BRACKET,W,L,WIN%,POINTS\n';
+    fs.forEach(function(p) {
     var wr = calcWinRate(p);
-    csv += [p.finalRank, escCSV(p.name), p.bracket||'-', p.wins, p.losses,
+    csv += [p.finalRank, escCSV(p.name), escCSV(p.member1||'-'), escCSV(p.member2||'-'),
+            p.bracket||'-', p.wins, p.losses,
             wr > 0 ? wr + '%' : '-', calcPoints(p)].join(',') + '\n';
-  });
+    });
   csv += '\nROUND,TYPE,COURT,P1,P2,WINNER\n';
   matches.forEach(function(m) {
     if (!m.completed) return;
