@@ -628,7 +628,7 @@ function makePlayer(id, name) {
 /* =====================================================
    CONSTANTS & STATE
 ===================================================== */
-var SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbwZOIinjiUJgwHWycX-u9oUBOhNmcdmXfT5P6aT26Dar5GInrbPfoDkX9AxnTyaZQ/exec';
+var SHEETS_URL   = 'https://script.google.com/macros/s/AKfycbw1Wc2zxro6o8C4QkyFQ4EbUoM0622RYJsTc-4k3BEORn-x_TBsDUmZiEg8S8hEsQ/exec';
 var STORAGE_KEY  = 'if_tournament_v3';
 var BACKUP_KEY   = 'if_tournament_v3_backup';
 var AUTO_SAVE_MS = 30000;
@@ -2630,8 +2630,14 @@ function getRealMatchCount(player) {
 }
 
 function byPerf(a, b) {
-  var pa = calcPoints(a), pb = calcPoints(b);
-  return pb !== pa ? pb - pa : a.losses - b.losses;
+  // 1. wins descending (real wins only — exclude byes)
+  var aRealWins = a.wins - matches.filter(function(m){ return m.bye && m.player1 === a.id; }).length;
+  var bRealWins = b.wins - matches.filter(function(m){ return m.bye && m.player1 === b.id; }).length;
+  if (bRealWins !== aRealWins) return bRealWins - aRealWins;
+  // 2. losses ascending
+  if (a.losses !== b.losses) return a.losses - b.losses;
+  // 3. win rate as tiebreaker
+  return calcWinRate(b) - calcWinRate(a);
 }
 
 function makeMatch(id, round, p1, p2) {
