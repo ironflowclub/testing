@@ -65,9 +65,29 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,251,253,.92);backdro
 .live-badge{background:var(--green)!important;color:#fff;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
 
 /* INPUTS */
-.input-row{display:flex;gap:8px;margin-bottom:10px}
-.input-row input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid var(--stroke2);background:var(--surface);color:var(--ink);font-family:var(--fb);font-size:15px;font-weight:500;outline:none;transition:border-color .15s;}
-.input-row input:focus{border-color:var(--ink)}
+.input-row{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+}
+.input-row input{
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 10px;
+  border: 1px solid var(--stroke2);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 12px 14px;
+  font-family: var(--fb);
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  min-width: 140px;
+}
+.input-row input:focus{
+  border-color: var(--ink);
+}
 .input-row input::placeholder{color:var(--ink3)}
 .btn-add{min-width:70px;padding:12px 18px;border-radius:10px;border:none;background:var(--ink);color:#fff;font-family:var(--fb);font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;}
 .btn-add:hover{opacity:.85}
@@ -398,6 +418,17 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,251,253,.92);backdro
   .modal-actions .modal-confirm,.modal-actions .modal-cancel{flex:1}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+@media (max-width: 480px){
+  .input-row{
+    flex-direction:column;
+  }
+
+  .input-row input{
+    width:100%;
+    min-width:0;
+  }
+}
 </style>
 </head>
 <body>
@@ -459,11 +490,12 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,251,253,.92);backdro
     </div>
     <div class="input-row">
         <input type="text" id="playerNameInput" placeholder="Enter Team name" onkeydown="if(event.key==='Enter') addPlayer()">
-        <button class="btn-add" onclick="addPlayer()">Add</button>
+        
     </div>
     <div class="input-row" style="margin-bottom:16px;">
         <input type="text" id="member1Input" placeholder="Player 1 name">
         <input type="text" id="member2Input" placeholder="Player 2 name">
+        <button class="btn-add" onclick="addPlayer()">Add</button>
     </div>
     <div class="action-row">
       <button class="btn-outline danger" onclick="askClearAll()">Clear All</button>
