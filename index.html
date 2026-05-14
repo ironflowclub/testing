@@ -2065,7 +2065,7 @@ function renderMatches() {
 
   if (!tournamentStarted) {
     title.textContent = 'Matches';
-    container.innerHTML = '<div class="empty-state">Start the tournament from the Players tab</div>';
+    container.innerHTML = '<div class="empty-state">Start the tournament from the Teams tab</div>';
     byeInfo.style.display = 'none';
     status.innerHTML = tabs.innerHTML = '';
     return;
@@ -2228,7 +2228,7 @@ function renderBracket() {
   if (!tournamentStarted) {
     wrapper.innerHTML = '<div style="text-align:center;padding:60px 20px;">'
       + '<p style="font-family:var(--ff);font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px;">No bracket yet</p>'
-      + '<p style="font-size:13px;color:var(--ink3);">Add players and start the tournament</p>'
+      + '<p style="font-size:13px;color:var(--ink3);">Add Teams and start the tournament</p>'
       + '</div>';
     return;
   }
@@ -2255,7 +2255,7 @@ function renderBracket() {
   var pct    = totalM ? Math.round((doneM / totalM) * 100) : 0;
 
   html += '<div class="bstats">';
-  html += bst(players.length, 'Players');
+  html += bst(players.length, 'Teams');
   html += bst(doneM + '/' + totalM, 'Matches');
   html += bst(totalM - doneM, 'Pending');
   html += bst(pct + '%', 'Done');
