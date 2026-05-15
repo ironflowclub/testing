@@ -2199,6 +2199,10 @@ function renderStandings() {
     html += '<div class="rank-num">' + rank + '</div>';
     html += '<div class="standing-info">';
     html += '<div class="standing-name">' + esc(p.name) + ' ' + bh + byB + '</div>';
+    if (p.member1 || p.member2) {
+      html += '<div style="font-size:11px;color:var(--ink3);font-weight:500;margin-top:2px;">'
+            + esc(p.member1 || '?') + ' & ' + esc(p.member2 || '?') + '</div>';
+    }
     html += '<div class="standing-stats">';
     html += '<span class="stat">W: <span class="stat-value wins">' + p.wins + '</span></span>';
     html += '<span class="stat">L: <span class="stat-value losses">' + p.losses + '</span></span>';
@@ -2496,21 +2500,21 @@ function saveHistoricalData(fs) {
     action: 'publish',
     tournament: {
       players: fs.map(function(p) {
-        return { id: p.id, name: p.name, bracket: p.bracket || '',
-                 wins: p.wins, losses: p.losses,
-                 winRate: calcWinRate(p), points: calcPoints(p), finalRank: p.finalRank || 999 };
-      }),
+      return { id: p.id, name: p.name, member1: p.member1 || '', member2: p.member2 || '',
+                bracket: p.bracket || '', wins: p.wins, losses: p.losses,
+                winRate: calcWinRate(p), points: calcPoints(p), finalRank: p.finalRank || 999 };
+      }), 
       matches: matches.map(function(m) {
         return { id: m.id, round: m.round, court: m.court || '', type: m.type || '',
                  player1: getName(m.player1), player2: m.player2 ? getName(m.player2) : '',
                  winner: m.winner ? getName(m.winner) : '',
                  completed: m.completed, bye: m.bye, label: m.label || '' };
       }),
-      standings: fs.map(function(p) {
-        return { rank: p.finalRank, name: p.name, bracket: p.bracket || '',
-                 wins: p.wins, losses: p.losses,
-                 winRate: calcWinRate(p), points: calcPoints(p) };
-      })
+          standings: fs.map(function(p) {
+      return { rank: p.finalRank, name: p.name, member1: p.member1 || '', member2: p.member2 || '',
+              bracket: p.bracket || '', wins: p.wins, losses: p.losses,
+              winRate: calcWinRate(p), points: calcPoints(p) };
+    })
     }
   };
   fetch(SHEETS_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
