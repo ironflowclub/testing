@@ -1,0 +1,174 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);color:var(--color-text-primary);font-size:14px}
+.sheet{max-width:540px;margin:1rem auto;border:0.5px solid var(--color-border-tertiary);border-radius:16px;background:var(--color-background-primary);overflow:hidden}
+.sh-head{padding:1.25rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.sh-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.av{width:46px;height:46px;border-radius:12px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;color:#3C3489;flex-shrink:0}
+.nm{font-size:17px;font-weight:500;line-height:1.3}
+.nm-sub{font-size:12px;color:var(--color-text-secondary);margin-top:3px}
+.grp-pill{font-size:11px;padding:3px 10px;border-radius:999px;background:#E6F1FB;color:#0C447C;border:0.5px solid #85B7EB;white-space:nowrap;flex-shrink:0}
+.qual-bar{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:8px;background:#EAF3DE;border:0.5px solid #97C459}
+.qual-title{font-size:13px;font-weight:500;color:#27500A}
+.qual-reason{font-size:11px;color:#3B6D11;margin-top:3px;line-height:1.5}
+.sh-body{padding:1.25rem}
+.sec-label{font-size:11px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:10px;margin-top:1.25rem}
+.sec-label:first-child{margin-top:0}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat-card{background:var(--color-background-secondary);border-radius:8px;padding:10px 8px;text-align:center}
+.stat-v{font-size:20px;font-weight:500;line-height:1}
+.stat-l{font-size:11px;color:var(--color-text-secondary);margin-top:4px}
+.c-green{color:#27500A} .c-red{color:#791F1F} .c-amber{color:#633806}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-row{display:flex;align-items:stretch;gap:0;cursor:pointer;border-radius:8px;transition:background .15s}
+.tl-row:hover{background:var(--color-background-secondary)}
+.tl-left{display:flex;flex-direction:column;align-items:center;padding:4px 14px 4px 4px;width:60px;flex-shrink:0}
+.tl-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.rb-w{background:#EAF3DE;color:#27500A} .rb-d{background:#FAEEDA;color:#633806} .rb-l{background:#FCEBEB;color:#791F1F} .rb-bye{background:#EEEDFE;color:#3C3489}
+.tl-line{flex:1;width:1px;background:var(--color-border-tertiary);margin-top:4px}
+.tl-row:last-child .tl-line{display:none}
+.tl-content{flex:1;padding:8px 8px 8px 0;min-width:0}
+.tl-main{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tl-opp{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.tl-score{font-size:14px;font-weight:500;flex-shrink:0}
+.score-w{color:#27500A} .score-l{color:#791F1F} .score-d{color:#854F0B}
+.tl-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.phase-tag{font-size:10px;padding:2px 7px;border-radius:4px;background:#EEEDFE;color:#3C3489;font-weight:500}
+.phase-tag.ko{background:#FAEEDA;color:#633806}
+.phase-tag.place{background:#E1F5EE;color:#085041}
+.tl-detail-text{font-size:11px;color:var(--color-text-secondary)}
+.pts-badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:#EAF3DE;color:#27500A;flex-shrink:0}
+.pts-badge.neg{background:#FCEBEB;color:#791F1F}
+.pts-badge.neu{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.expand-icon{font-size:14px;color:var(--color-text-secondary);flex-shrink:0;transition:transform .2s}
+.expanded .expand-icon{transform:rotate(180deg)}
+.tl-detail{overflow:hidden;max-height:0;transition:max-height .25s ease}
+.tl-detail.open{max-height:200px}
+.detail-box{margin:0 0 8px 0;padding:10px 12px;border-radius:8px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary)}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.detail-row:last-child{border-bottom:none}
+.detail-lbl{color:var(--color-text-secondary)}
+.detail-val{font-weight:500}
+.pts-summary{margin-top:1rem;border:0.5px solid var(--color-border-tertiary);border-radius:8px;overflow:hidden}
+.pts-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.pts-item:last-child{border-bottom:none}
+.pts-item-lbl{font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px}
+.pts-item-val{font-size:14px;font-weight:500}
+.pts-total-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#FAEEDA;border-top:0.5px solid #EF9F27}
+.pts-total-lbl{font-size:13px;font-weight:500;color:#633806}
+.pts-total-val{font-size:18px;font-weight:500;color:#633806}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+</style>
+
+<h2 class="sr-only">Team profile sheet for Fire Squad showing match history timeline and points breakdown</h2>
+
+<div class="sheet">
+  <div class="sh-head">
+    <div class="sh-top">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex:1;min-width:0">
+        <div class="av">FS</div>
+        <div>
+          <div class="nm">Fire Squad</div>
+          <div class="nm-sub">Ahmed Al-Rashid &amp; Omar Khalil</div>
+        </div>
+      </div>
+      <span class="grp-pill">Group A</span>
+    </div>
+    <div class="qual-bar">
+      <i class="ti ti-circle-check" style="color:#3B6D11;font-size:18px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+      <div>
+        <div class="qual-title">Qualified — 1st in Group A</div>
+        <div class="qual-reason">3 wins, +18 point diff. Head-to-head over Thunder Wings (won 21–17) broke the tie on equal PD.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh-body">
+    <div class="sec-label">Group stage record</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-v c-green">3</div><div class="stat-l">Wins</div></div>
+      <div class="stat-card"><div class="stat-v c-amber">1</div><div class="stat-l">Draws</div></div>
+      <div class="stat-card"><div class="stat-v c-red">0</div><div class="stat-l">Losses</div></div>
+      <div class="stat-card"><div class="stat-v c-green">+18</div><div class="stat-l">Point diff</div></div>
+    </div>
+
+    <div class="sec-label" style="margin-top:1.25rem">Match history &amp; points earned — tap to expand</div>
+    <div class="timeline" id="timeline"></div>
+
+    <div class="sec-label" style="margin-top:1.25rem">Points summary</div>
+    <div class="pts-summary" id="ptsSummary"></div>
+  </div>
+</div>
+
+<script>
+var matches = [
+  {result:'W', opp:'Thunder Wings', score:'21–17', myS:21, oppS:17, phase:'group', phaseLabel:'Group A', court:'Court 2', label:'Match 3 of 4', pts:6, ptsLabel:'+6 win bonus', reason:'Head-to-head decider. This win was the tiebreaker for 1st place.'},
+  {result:'W', opp:'Iron Bulls', score:'25–14', myS:25, oppS:14, phase:'group', phaseLabel:'Group A', court:'Court 1', label:'Match 2 of 4', pts:6, ptsLabel:'+6 win bonus', reason:'Dominant win. Biggest margin of the group stage.'},
+  {result:'D', opp:'Storm United', score:'18–18', myS:18, oppS:18, phase:'group', phaseLabel:'Group A', court:'Court 3', label:'Match 1 of 4', pts:3, ptsLabel:'+3 draw bonus', reason:'Ended level. Both teams earn draw points.'},
+  {result:'W', opp:'Desert Hawks', score:'23–20', myS:23, oppS:20, phase:'group', phaseLabel:'Group A', court:'Court 4', label:'Match 4 of 4', pts:6, ptsLabel:'+6 win bonus', reason:'Close match. Sealed top qualification spot.'},
+  {result:'W', opp:'Blue Falcons', score:'21–15', myS:21, oppS:15, phase:'ko', phaseLabel:'Semi-final', court:'Court 1', label:'KO stage', pts:8, ptsLabel:'+8 KO win bonus', reason:'Comfortable semi-final win. Booked the Grand Final spot.'},
+  {result:'W', opp:'Rapid Fire', score:'24–22', myS:24, oppS:22, phase:'ko', phaseLabel:'Grand Final', court:'Court 1', label:'KO stage', pts:10, ptsLabel:'+10 Grand Final bonus', reason:'Thrilling final. Won by 2 points to claim the championship.'},
+];
+
+var ptsByType = [
+  {dot:'#639922', label:'Group wins (3 × 6)', val:18},
+  {dot:'#BA7517', label:'Group draw (1 × 3)', val:3},
+  {dot:'#378ADD', label:'KO wins (1 × 8)', val:8},
+  {dot:'#E24B4A', label:'Grand Final win', val:10},
+];
+var totalPts = ptsByType.reduce(function(a,b){return a+b.val;},0);
+
+var tl = document.getElementById('timeline');
+matches.forEach(function(m, i){
+  var phClass = m.phase==='ko'?'ko':m.phase==='placement'?'place':'';
+  var scoreClass = m.result==='W'?'score-w':m.result==='L'?'score-l':'score-d';
+  var rbClass = 'rb-'+(m.result==='BYE'?'bye':m.result.toLowerCase());
+  var ptsClass = m.pts>0?'':'neg';
+
+  var row = document.createElement('div');
+  row.className='tl-row';
+  row.innerHTML =
+    '<div class="tl-left"><div class="tl-badge '+rbClass+'">'+m.result+'</div><div class="tl-line"></div></div>'+
+    '<div class="tl-content">'+
+      '<div class="tl-main">'+
+        '<span class="tl-opp">vs '+m.opp+'</span>'+
+        '<span class="tl-score '+scoreClass+'">'+m.score+'</span>'+
+        '<i class="ti ti-chevron-down expand-icon" aria-hidden="true"></i>'+
+      '</div>'+
+      '<div class="tl-meta">'+
+        '<span class="phase-tag '+phClass+'">'+m.phaseLabel+'</span>'+
+        '<span class="tl-detail-text">'+m.court+'</span>'+
+        '<span class="pts-badge '+ptsClass+'" style="margin-left:auto">'+m.ptsLabel+'</span>'+
+      '</div>'+
+      '<div class="tl-detail" id="detail-'+i+'">'+
+        '<div class="detail-box">'+
+          '<div class="detail-row"><span class="detail-lbl">Match</span><span class="detail-val">'+m.label+'</span></div>'+
+          '<div class="detail-row"><span class="detail-lbl">Court</span><span class="detail-val">'+m.court+'</span></div>'+
+          '<div class="detail-row"><span class="detail-lbl">Score</span><span class="detail-val '+scoreClass+'">'+m.myS+' – '+m.oppS+'</span></div>'+
+          '<div class="detail-row"><span class="detail-lbl">Points earned</span><span class="detail-val c-green">+'+m.pts+'</span></div>'+
+          '<div class="detail-row" style="border-bottom:none"><span class="detail-lbl" style="flex:1;padding-right:12px">Note</span><span class="detail-val" style="text-align:right;font-weight:400;color:var(--color-text-secondary)">'+m.reason+'</span></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+
+  row.addEventListener('click', function(){
+    var det = document.getElementById('detail-'+i);
+    var icon = row.querySelector('.expand-icon');
+    var isOpen = det.classList.contains('open');
+    document.querySelectorAll('.tl-detail.open').forEach(function(d){d.classList.remove('open');});
+    document.querySelectorAll('.tl-row.expanded').forEach(function(r){r.classList.remove('expanded');});
+    if(!isOpen){det.classList.add('open');row.classList.add('expanded');}
+  });
+
+  tl.appendChild(row);
+});
+
+var ps = document.getElementById('ptsSummary');
+var html = '';
+ptsByType.forEach(function(p){
+  html += '<div class="pts-item"><span class="pts-item-lbl"><span class="dot" style="background:'+p.dot+'"></span>'+p.label+'</span><span class="pts-item-val">'+p.val+'</span></div>';
+});
+html += '<div class="pts-total-row"><span class="pts-total-lbl">Total bonus points</span><span class="pts-total-val">'+totalPts+'</span></div>';
+ps.innerHTML = html;
+</script>
