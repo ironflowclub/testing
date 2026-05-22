@@ -797,6 +797,10 @@ var _timerInterval      = null;
 var _courtAlertTimer    = null;
 var _toastTimer         = null;
 
+var BASE_START = 5000;
+var GAP        = 300;
+
+
 /* =====================================================
    INIT
 ===================================================== */
@@ -2482,27 +2486,41 @@ function renderMatches() {
     html += '<div class="match-label">' + esc(lbl) + '</div>';
 
     if (m.completed) {
-  var p1win  = m.winner === p1.id;
-  var isDraw = !m.winner;
-  var s1     = m.score1 != null ? m.score1 : '–';
-  var s2     = m.score2 != null ? m.score2 : '–';
+      var p1win  = m.winner === p1.id;
+      var isDraw = !m.winner;
+      var s1     = m.score1 != null ? m.score1 : '–';
+      var s2     = m.score2 != null ? m.score2 : '–';
 
-  html += '<div class="match-result-row">';
-  html += '<div class="result-player ' + (isDraw ? '' : (p1win ? 'winner' : 'loser')) + '">'
-        + esc(p1.name)
-        + '<span style="font-family:var(--ff);font-size:22px;font-weight:800;display:block;margin-top:4px;">' + s1 + '</span>'
-        + (p1win ? '<span class="winner-icon">Winner ✓</span>' : '')
-        + '</div>';
-  html += '<span class="vs-badge">VS</span>';
-  html += '<div class="result-player ' + (isDraw ? '' : (!p1win ? 'winner' : 'loser')) + '">'
-        + esc(p2.name)
-        + '<span style="font-family:var(--ff);font-size:22px;font-weight:800;display:block;margin-top:4px;">' + s2 + '</span>'
-        + (!p1win && !isDraw ? '<span class="winner-icon">Winner ✓</span>' : '')
-        + (isDraw ? '<span class="winner-icon">Draw</span>' : '')
-        + '</div>';
-  html += '</div>';
-  
-}
+      html += '<div class="match-result-row">';
+      html += '<div class="result-player ' + (isDraw ? '' : (p1win ? 'winner' : 'loser')) + '">'
+            + '<span style="font-size:13px;font-weight:700;word-break:break-word;">' + esc(p1.name) + '</span>'
+            + '<span style="font-family:var(--ff);font-size:26px;font-weight:800;display:block;margin-top:6px;line-height:1;">' + s1 + '</span>'
+            + (p1win ? '<span class="winner-icon">Winner ✓</span>' : (isDraw ? '<span class="winner-icon">Draw</span>' : ''))
+            + '</div>';
+      html += '<span class="vs-badge">VS</span>';
+      html += '<div class="result-player ' + (isDraw ? '' : (!p1win ? 'winner' : 'loser')) + '">'
+            + '<span style="font-size:13px;font-weight:700;word-break:break-word;">' + esc(p2.name) + '</span>'
+            + '<span style="font-family:var(--ff);font-size:26px;font-weight:800;display:block;margin-top:6px;line-height:1;">' + s2 + '</span>'
+            + (!p1win && !isDraw ? '<span class="winner-icon">Winner ✓</span>' : '')
+            + '</div>';
+      html += '</div>';
+      if (phase === 'group') {
+        html += '<div class="undo-row"><button class="undo-btn" onclick="askUndo(' + m.id + ')">↩ Undo</button></div>';
+      }
+    } else {
+      html += '<div class="match-versus">';
+      html += '<button class="player-pick" onclick="openPickSheet(' + m.id + ')">'
+            + '<span class="pick-name">' + esc(p1.name) + '</span>'
+            + '<span class="pick-hint">Tap to record</span>'
+            + '</button>';
+      html += '<span class="vs-badge">VS</span>';
+      html += '<button class="player-pick" onclick="openPickSheet(' + m.id + ')">'
+            + '<span class="pick-name">' + esc(p2.name) + '</span>'
+            + '<span class="pick-hint">Tap to record</span>'
+            + '</button>';
+      html += '</div>';
+    }
+    html += '</div>'; 
   });
 
   container.innerHTML = html || '<div class="empty-state">No matches in this section</div>';
@@ -2560,6 +2578,44 @@ function switchRound(r) { viewingRound = r; renderMatches(); }
 /* =====================================================
    STANDINGS
 ===================================================== */
+
+function getBracketLabel(p) {
+  // Tournament complete — show final result
+  if (tournamentFinished) {
+    if (p.finalRank === 1) return { text: '🥇 Champion',    cls: 'bracket-label top' };
+    if (p.finalRank === 2) return { text: '🥈 Runner Up',   cls: 'bracket-label top' };
+    if (p.finalRank === 3) return { text: '🥉 3rd Place',   cls: 'bracket-label top' };
+    if (p.knockoutElim)    return { text: 'KO Round ' + p.knockoutElim, cls: 'bracket-label knockout' };
+    if (p.groupId)         return { text: p.groupId,        cls: 'bracket-label placement' };
+    return null;
+  }
+
+  // During group stage
+  if (phase === 'group') {
+    if (!p.groupId) return null;
+    var grp = groups.find(function(g) { return g.name === p.groupId; });
+    if (!grp) return { text: p.groupId, cls: 'bracket-label placement' };
+    var standing = getGroupStandings(grp);
+    var pos = standing.findIndex(function(s) { return s.id === p.id; });
+    if (pos === 0) return { text: p.groupId + ' · 1st', cls: 'bracket-label top' };
+    if (pos === 1) return { text: p.groupId + ' · 2nd', cls: 'bracket-label top' };
+    return        { text: p.groupId + ' · ' + (pos+1) + 'th', cls: 'bracket-label placement' };
+  }
+
+  // During knockout stage
+  if (phase === 'knockout' || phase === 'complete') {
+    if (p.bracket === 'knockout') {
+      if (p.seed) return { text: 'Seed ' + p.seed, cls: 'bracket-label knockout' };
+      return { text: 'Knockout', cls: 'bracket-label knockout' };
+    }
+    if (p.knockoutElim) return { text: 'Elim. R' + p.knockoutElim, cls: 'bracket-label placement' };
+    if (p.groupId)      return { text: p.groupId, cls: 'bracket-label placement' };
+  }
+
+  return null;
+}
+
+
 function renderStandings() {
   var container = document.getElementById('standingsBody');
   var filterBar = document.getElementById('standingsFilterBar');
@@ -2642,8 +2698,8 @@ function renderStandingsList(container, sorted, isFinal) {
     var wr     = calcWinRate(p);
     var mp     = getRealMatchCount(p);
     var rc     = rank <= 3 ? pc[rank-1] : '';
-    var bh     = p.bracket
-      ? '<span class="bracket-label ' + p.bracket.toLowerCase() + '">' + p.bracket + '</span>' : '';
+    var lbl = getBracketLabel(p);
+      var bh  = lbl ? '<span class="' + lbl.cls + '">' + lbl.text + '</span>' : '';
     var wrDisplay = mp > 0 ? wr + '%' : '—';
     var wrc = mp > 0 ? (wr >= 70 ? 'var(--green)' : wr >= 50 ? 'var(--c2)' : 'var(--red)') : 'var(--ink3)';
 
@@ -2690,15 +2746,12 @@ function filterStandings(f, btn) {
   This guarantees: basePoints(rank K) > basePoints(rank K+1) + maxTotalBonus
   So no amount of bonus farming can change relative ranking.
 ===================================================== */
-function computeSafeGap(totalTeams) {
-  var maxBonus = Math.max.apply(null, Object.values ? Object.values(BONUS) : [8]);
-  // Upper bound: a team could earn bonus for every match they play
-  // Conservative upper bound: totalTeams × maxBonus per match
-  return (totalTeams * maxBonus) + 1;
-}
 
-function computeBasePoints(rank, totalTeams, safeGap) {
-  return (totalTeams - rank + 1) * safeGap;
+function computeSafeGap(_totalTeams) { return GAP; }
+
+
+function computeBasePoints(rank, _totalTeams, _safeGap) {
+  return BASE_START - (rank - 1) * GAP;
 }
 
 function computeBonusPoints(player) {
