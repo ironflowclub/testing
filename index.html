@@ -1281,9 +1281,8 @@ function recordMatchResult(matchId, score1, score2) {
     p2.wins++; p1.losses++;
     if (m.type === 'group') { p2.groupWins++; p1.groupLosses++; }
   } else {
-    // Draw — count as loss for both for group standings purposes
-    p1.losses++; p2.losses++;
-    if (m.type === 'group') { p1.groupLosses++; p2.groupLosses++; }
+    // Draw — increment draws only, never losses
+    if (m.type === 'group') { p1.groupDraws++; p2.groupDraws++; }
   }
 
   delete courtTimers[m.id];
@@ -1291,6 +1290,17 @@ function recordMatchResult(matchId, score1, score2) {
   // KO progression
   if (m.type === 'knockout' || m.type === 'gold') {
     if (m.winner) progressKnockout(m);
+  }
+
+  // After: if (m.type === 'knockout' || m.type === 'gold') { ... }
+
+  if (m.type === 'nonqual_placement') {
+    var winner = getPlayer(m.winner);
+    var loser  = getPlayer(m.player1 === m.winner ? m.player2 : m.player1);
+    // Find which rank slot this match covers from its label
+    var rankMatch = m.label ? m.label.match(/Rank (\d+)\/(\d+)/) : null;
+    if (rankMatch && winner) winner.finalRank = parseInt(rankMatch[1]);
+    if (rankMatch && loser)  loser.finalRank  = parseInt(rankMatch[2]);
   }
 
   // Placement match — record win stat
@@ -1342,31 +1352,31 @@ function getGroupStandings(group) {
     return getPlayer(id);
   }).filter(Boolean).sort(function(a, b) {
 
-    // 1. Total Wins
-    var aw = a.groupWins || 0, bw = b.groupWins || 0;
-    if (bw !== aw) return bw - aw;
+    // 1. Win Percentage (normalizes for unequal games played)
+    var aGames = (a.groupWins||0) + (a.groupLosses||0) + (a.groupDraws||0) || 1;
+    var bGames = (b.groupWins||0) + (b.groupLosses||0) + (b.groupDraws||0) || 1;
+    var aWinPct = (a.groupWins || 0) / aGames;
+    var bWinPct = (b.groupWins || 0) / bGames;
+    if (Math.abs(bWinPct - aWinPct) > 0.0001) return bWinPct - aWinPct;
 
-    // 2. Point Differential (PF - PA)
-    var aPD = (a.groupPF || 0) - (a.groupPA || 0);
-    var bPD = (b.groupPF || 0) - (b.groupPA || 0);
-    if (bPD !== aPD) return bPD - aPD;
+    // 2. Avg Point Differential Per Game
+    var aPDpg = ((a.groupPF||0) - (a.groupPA||0)) / aGames;
+    var bPDpg = ((b.groupPF||0) - (b.groupPA||0)) / bGames;
+    if (Math.abs(bPDpg - aPDpg) > 0.0001) return bPDpg - aPDpg;
 
-    // 3. Total Points Scored (PF)
-    var aPF = a.groupPF || 0, bPF = b.groupPF || 0;
-    if (bPF !== aPF) return bPF - aPF;
+    // 3. Avg Points Scored Per Game
+    var aPFpg = (a.groupPF||0) / aGames;
+    var bPFpg = (b.groupPF||0) / bGames;
+    if (Math.abs(bPFpg - aPFpg) > 0.0001) return bPFpg - aPFpg;
 
-    // 4. Fewest Points Against (PA) — lower is better
-    var aPA = a.groupPA || 0, bPA = b.groupPA || 0;
-    if (aPA !== bPA) return aPA - bPA;
-
-    // 5. Head-to-Head
+    // 4. Head-to-Head
     var h2h = headToHead(a.id, b.id, group.name);
     if (h2h !== 0) return h2h;
 
-    // 6. Admin Decision — flag these players as needing manual resolution,
-    //    fall back to alpha so the sort remains stable and deterministic.
+    // 5. Admin Decision fallback
     flagAdminDecisionNeeded(a.id, b.id, group.name);
     return a.name.localeCompare(b.name);
+
   });
 }
 
@@ -1448,15 +1458,20 @@ function qualifyTeams() {
   // Step 2 — rank winners among themselves by group performance
   // (best group winner gets seed 1, etc.)
   winners.sort(function(a, b) {
-    // 1. Group wins
-    var aw = a.groupWins || 0, bw = b.groupWins || 0;
-    if (bw !== aw) return bw - aw;
-    // 2. Point differential
-    var aPD = (a.groupPF || 0) - (a.groupPA || 0);
-    var bPD = (b.groupPF || 0) - (b.groupPA || 0);
-    if (bPD !== aPD) return bPD - aPD;
-    // 3. Points for
-    if ((b.groupPF || 0) !== (a.groupPF || 0)) return (b.groupPF || 0) - (a.groupPF || 0);
+    var aGames = (a.groupWins||0) + (a.groupLosses||0) + (a.groupDraws||0) || 1;
+    var bGames = (b.groupWins||0) + (b.groupLosses||0) + (b.groupDraws||0) || 1;
+    // 1. Win Percentage
+    var aWinPct = (a.groupWins||0) / aGames;
+    var bWinPct = (b.groupWins||0) / bGames;
+    if (Math.abs(bWinPct - aWinPct) > 0.0001) return bWinPct - aWinPct;
+    // 2. Avg PD per game
+    var aPDpg = ((a.groupPF||0) - (a.groupPA||0)) / aGames;
+    var bPDpg = ((b.groupPF||0) - (b.groupPA||0)) / bGames;
+    if (Math.abs(bPDpg - aPDpg) > 0.0001) return bPDpg - aPDpg;
+    // 3. Avg PF per game
+    var aPFpg = (a.groupPF||0) / aGames;
+    var bPFpg = (b.groupPF||0) / bGames;
+    if (Math.abs(bPFpg - aPFpg) > 0.0001) return bPFpg - aPFpg;
     // 4. Stable fallback
     return (a.groupId || '').localeCompare(b.groupId || '');
   });
@@ -1854,7 +1869,8 @@ function checkIfTournamentDone() {
 ===================================================== */
 function transitionToKnockout() {
   qualifyTeams();
-  rankNonQualifiedTeams(); // ← add this line
+  generateNonQualifiedPlacementMatches(); // seeds & pairs non-qual players
+  // rankNonQualifiedTeams() — no longer needed, play-offs assign ranks
   phase = 'knockout';
   generateFirstKnockoutRound();
   saveState();
@@ -1909,16 +1925,16 @@ function getPriorityMatch() {
   });
   if (!queued.length) return null;
 
-  var groupQ     = queued.filter(function(m) { return m.type === 'group'; });
-  var koQ        = queued.filter(function(m) { return m.type === 'knockout'; });
-  var placementQ = queued.filter(function(m) { return m.type === 'placement'; });
-  var goldQ      = queued.filter(function(m) { return m.type === 'gold'; });
+  var groupQ      = queued.filter(function(m) { return m.type === 'group'; });
+  var koQ         = queued.filter(function(m) { return m.type === 'knockout'; });
+  var placementQ  = queued.filter(function(m) { return m.type === 'placement'; });
+  var nqPlaceQ    = queued.filter(function(m) { return m.type === 'nonqual_placement'; }); // ← new
+  var goldQ       = queued.filter(function(m) { return m.type === 'gold'; });
 
   if (groupQ.length)     return groupQ[0];
   if (koQ.length)        return koQ[0];
   if (placementQ.length) return placementQ[0];
-
-  // Gold Final — only when everything else is done (last for hype)
+  if (nqPlaceQ.length)   return nqPlaceQ[0]; // ← new
   if (goldQ.length && goldFinalUnlocked()) return goldQ[0];
   return null;
 }
@@ -2089,8 +2105,8 @@ function askUndo(matchId) {
       if (p1) { p1.losses--; p1.groupLosses--; }
     } else {
       // Was a draw
-      if (p1) { p1.losses--; p1.groupLosses--; }
-      if (p2) { p2.losses--; p2.groupLosses--; }
+      if (p1 && m.type === 'group') p1.groupDraws--;
+      if (p2 && m.type === 'group') p2.groupDraws--;
     }
 
     m.winner    = null;
@@ -2108,33 +2124,45 @@ function askUndo(matchId) {
 
 /* Rank non-qualified teams by group stage stats — no extra matches */
 function rankNonQualifiedTeams() {
-  var nonQualified = players.filter(function(p) { return p.bracket === 'placement'; });
-  if (!nonQualified.length) return;
+  // Ranks are now assigned by play-off match results in recordMatchResult.
+  // This function intentionally does nothing.
+}
 
-  // Sort by group position first, then stats
-  nonQualified.sort(function(a, b) {
-    // 1. Group wins
-    var aw = a.groupWins || 0, bw = b.groupWins || 0;
-    if (bw !== aw) return bw - aw;
-    // 2. Point differential
-    var aPD = (a.groupPF || 0) - (a.groupPA || 0);
-    var bPD = (b.groupPF || 0) - (b.groupPA || 0);
-    if (bPD !== aPD) return bPD - aPD;
-    // 3. Points for
-    var aPF = a.groupPF || 0, bPF = b.groupPF || 0;
-    if (bPF !== aPF) return bPF - aPF;
-    // 4. Points against
-    var aPA = a.groupPA || 0, bPA = b.groupPA || 0;
-    if (aPA !== bPA) return aPA - bPA;
-    // 5. Stable fallback
+
+function generateNonQualifiedPlacementMatches() {
+  // Get all non-qualified players sorted by points-per-game
+  var nonQual = players.filter(function(p) { return p.bracket === 'placement'; });
+
+  nonQual.sort(function(a, b) {
+    var aGames = (a.groupWins||0) + (a.groupLosses||0) + (a.groupDraws||0) || 1;
+    var bGames = (b.groupWins||0) + (b.groupLosses||0) + (b.groupDraws||0) || 1;
+    // 1. Win Percentage
+    var aWinPct = (a.groupWins||0) / aGames;
+    var bWinPct = (b.groupWins||0) / bGames;
+    if (Math.abs(bWinPct - aWinPct) > 0.0001) return bWinPct - aWinPct;
+    // 2. Avg PD per game
+    var aPDpg = ((a.groupPF||0) - (a.groupPA||0)) / aGames;
+    var bPDpg = ((b.groupPF||0) - (b.groupPA||0)) / bGames;
+    if (Math.abs(bPDpg - aPDpg) > 0.0001) return bPDpg - aPDpg;
+    // 3. Avg PF per game
+    var aPFpg = (a.groupPF||0) / aGames;
+    var bPFpg = (b.groupPF||0) / bGames;
+    if (Math.abs(bPFpg - aPFpg) > 0.0001) return bPFpg - aPFpg;
+    // 4. Stable fallback
     return a.name.localeCompare(b.name);
   });
 
-  // Assign provisional ranks starting after 8 (KO teams take 1–8)
-  nonQualified.forEach(function(p, idx) {
-    p.finalRank = 9 + idx;
-  });
+  // Pair them: 1st vs 2nd → rank 9/10, 3rd vs 4th → rank 11/12, etc.
+  for (var i = 0; i < nonQual.length; i += 2) {
+    if (i + 1 >= nonQual.length) break; // odd one out — auto-ranks last
+    var m = makeMatch(nextId(), 200, nonQual[i].id, nonQual[i + 1].id);
+    m.type    = 'nonqual_placement';
+    m.slotKey = 'nonqual_r' + Math.floor(i / 2);
+    m.label   = 'Rank ' + (9 + i) + '/' + (10 + i) + ' Play-off';
+    matches.push(m);
+  }
 }
+
 
 /* =====================================================
    QUEUE SCREEN
@@ -2217,9 +2245,9 @@ function getPriorityQueue() {
   var groupQ     = queued.filter(function(m) { return m.type === 'group'; });
   var koQ        = queued.filter(function(m) { return m.type === 'knockout'; });
   var placementQ = queued.filter(function(m) { return m.type === 'placement'; });
+  var nqPlaceQ   = queued.filter(function(m) { return m.type === 'nonqual_placement'; });
   var goldQ      = queued.filter(function(m) { return m.type === 'gold'; });
-  // Order: group → KO → placement → gold (gold always last)
-  return groupQ.concat(koQ).concat(placementQ).concat(goldQ);
+  return groupQ.concat(koQ).concat(placementQ).concat(nqPlaceQ).concat(goldQ);
 }
 
 function renderCourtsGrid(liveM, queuedM) {
@@ -2570,6 +2598,18 @@ function buildMatchTabs() {
     if (pm.length) tabs.push({ label: 'Placement ' + slot.replace('elim_r','R'), matches: pm });
   });
 
+  // After the placement slots block, add:
+  var nqSeen = {};
+  matches.forEach(function(m) {
+    if (m.type === 'nonqual_placement' && m.slotKey && !nqSeen[m.slotKey]) {
+      nqSeen[m.slotKey] = true;
+    }
+  });
+  Object.keys(nqSeen).forEach(function(slot) {
+    var pm = matches.filter(function(m) { return m.slotKey === slot; });
+    if (pm.length) tabs.push({ label: 'Play-off ' + slot.replace('nonqual_r','#'), matches: pm });
+  });
+
   return tabs;
 }
 
@@ -2655,7 +2695,7 @@ function renderGroupStandingsView(container) {
     var total = groupMatches.length;
 
     html += '<table class="group-table">';
-    html += '<thead><tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>PF</th><th>PA</th><th>+/-</th></tr></thead>';
+    html += '<thead><tr><th>#</th><th>Team</th><th>W</th><th>D</th><th>L</th><th>PF</th><th>PA</th><th>+/-</th></tr></thead>';
     html += '<tbody>';
     standings.forEach(function(p, idx) {
       var qualified = idx === 0 || idx === 1;
@@ -2669,6 +2709,7 @@ function renderGroupStandingsView(container) {
             + (idx === 2 ? '<span class="group-3rd-badge">3rd</span>' : '')
             + '</td>';
       html += '<td style="color:var(--green);font-weight:700;">'  + (p.groupWins   || 0) + '</td>';
+      html += '<td style="color:var(--c2);font-weight:700;">'     + (p.groupDraws  || 0) + '</td>';
       html += '<td style="color:var(--red);font-weight:700;">'    + (p.groupLosses || 0) + '</td>';
       html += '<td style="font-weight:600;">'                     + (p.groupPF     || 0) + '</td>';
       html += '<td style="font-weight:600;">'                     + (p.groupPA     || 0) + '</td>';
@@ -2829,15 +2870,10 @@ function computeFinalStandings() {
     slotIds.forEach(assignRank);
   }
 
-  // 3. Non-qualified players (already ranked by rankNonQualifiedTeams)
+  // 3. Non-qualified players — includes nonqual_placement participants
   var nonQual = players.filter(function(p) {
-    return !ranked[p.id] && p.bracket === 'placement'
-        && !matches.some(function(m) {
-            return (m.type === 'knockout' || m.type === 'gold')
-                && (m.player1 === p.id || m.player2 === p.id);
-          });
+    return !ranked[p.id] && p.bracket === 'placement';
   }).sort(function(a, b) {
-    // Use pre-assigned finalRank if available, else fall back to stats
     var ar = a.finalRank || 999, br = b.finalRank || 999;
     if (ar !== br) return ar - br;
     return a.name.localeCompare(b.name);
@@ -3254,7 +3290,8 @@ function calcPoints(player) {
 function calcWinRate(player) {
   var byeWins  = matches.filter(function(m) { return m.bye && m.player1 === player.id; }).length;
   var realWins = player.wins - byeWins;
-  var realPlayed = (player.wins + player.losses) - byeWins;
+  var realDraws = player.groupDraws || 0;
+  var realPlayed = (player.wins + player.losses + realDraws) - byeWins;
   return realPlayed === 0 ? 0 : Math.round((realWins / realPlayed) * 100);
 }
 
