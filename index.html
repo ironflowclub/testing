@@ -3103,7 +3103,7 @@ function renderTeamMatchHistory(p) {
     var dotCls='mh-dot '+result;
     var dotLbl=result==='win'?'W':result==='loss'?'L':result==='draw'?'D':'?';
     var phaseLabel=m.type==='group'?(m.group||'Group'):m.type==='gold'?'Gold Final':m.type==='knockout'?'KO R'+(m.koRound||''):(m.label||m.type||'Match');
-    var pts=!m.completed?0:m.winner===p.id?(m.type==='gold'?BONUS.finalWin:m.type==='knockout'?BONUS.koWin:m.type==='placement'?BONUS.placeWin:BONUS.groupWin):m.completed?1:0;
+    var pts=!m.completed?0:m.winner===p.id?(m.type==='gold'?BONUS.finalWin:m.type==='knockout'?BONUS.koWin:m.type==='placement'?BONUS.placeWin:BONUS.groupWin):0;
 
     return '<div class="mh-item">'
       +'<div class="'+dotCls+'">'+dotLbl+'</div>'
