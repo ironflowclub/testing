@@ -840,7 +840,11 @@ header{position:sticky;top:0;z-index:50;background:rgba(14,15,19,.92);backdrop-f
 /* =====================================================
    CONSTANTS & STATE
 ===================================================== */
-var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzLO1YP1yw0GW7XQ7LVqu0IC2ih_LpWT8orQdQB4Y8ucKBCy_IjmT8I2v8kV65n/exec';
+
+
+var GAS_URL      = 'https://script.google.com/macros/s/AKfycbzLO1YP1yw0GW7XQ7LVqu0IC2ih_LpWT8orQdQB4Y8ucKBCy_IjmT8I2v8kV65n/exec';
+
+//var SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbzLO1YP1yw0GW7XQ7LVqu0IC2ih_LpWT8orQdQB4Y8ucKBCy_IjmT8I2v8kV65n/exec';
 var STORAGE_KEY = 'if_t_v5';
 var BACKUP_KEY  = 'if_t_v5_bk';
 var AUTO_SAVE_MS = 28000;
@@ -2950,17 +2954,7 @@ function showFinalSummary() {
 }
 
 function saveHistoricalData(fs) {
-  showToast('Publishing...');
-  var n=fs.length;
-  var payload = { session:typeof AuthGuard!=='undefined'?AuthGuard.getToken():'', action:'publish',
-    tournament: { players:fs.map(function(p){ return {id:p.id,name:p.name,member1:p.member1||'',member2:p.member2||'',bracket:p.bracket||'',wins:p.wins,losses:p.losses,points:p.totalScore||0,finalRank:p.finalRank||999}; }),
-      matches:matches.map(function(m){ return {id:m.id,round:m.round,court:m.court||'',type:m.type||'',player1:getName(m.player1),player2:m.player2?getName(m.player2):'',winner:m.winner?getName(m.winner):'',completed:m.completed,bye:m.bye,label:m.label||''}; }),
-      standings:fs.map(function(p){ return {rank:p.finalRank,name:p.name,member1:p.member1||'',member2:p.member2||'',bracket:p.bracket||'',wins:p.wins,losses:p.losses,points:p.totalScore||0}; }) } };
-  fetch(SHEETS_URL,{method:'POST',body:JSON.stringify(payload),redirect:'follow'})
-    .then(function(r){return r.text();}).then(function(t) {
-      try { var d=JSON.parse(t); if(d.success) showToast('✓ Published — '+d.playersCount+' players'); else { showToast('Publish failed',true); resultsPublished=false; saveState(); } }
-      catch(e) { showToast('Publish error',true); resultsPublished=false; saveState(); }
-    }).catch(function(){ showToast('Network error',true); resultsPublished=false; saveState(); });
+  publishToViewer();
 }
 
 function exportTournamentCSV() {
@@ -2982,6 +2976,150 @@ function exportTournamentCSV() {
   dlCSV(csv,'IronFlow_'+today+'.csv');
 }
 
+
+function buildPublishPayload() {
+  return {
+    _publishedAt   : new Date().toISOString(),
+    _schemaVersion : 2,
+
+    phase               : phase,
+    tournamentStarted   : tournamentStarted,
+    tournamentFinished  : tournamentFinished,
+    resultsPublished    : resultsPublished,
+
+    players : players.map(function(p) {
+      return {
+        id           : p.id,
+        name         : p.name,
+        member1      : p.member1 || '',
+        member2      : p.member2 || '',
+        groupId      : p.groupId || null,
+        bracket      : p.bracket || null,
+        seed         : p.seed    || null,
+        finalRank    : p.finalRank    != null ? p.finalRank    : null,
+        nonQualSeed  : p.nonQualSeed  != null ? p.nonQualSeed  : null,
+        hasBye       : p.hasBye       || false,
+        knockoutElim : p.knockoutElim != null ? p.knockoutElim : null,
+        qualReason   : p.qualReason   || null,
+        wins        : p.wins        || 0,
+        losses      : p.losses      || 0,
+        groupWins   : p.groupWins   || 0,
+        groupLosses : p.groupLosses || 0,
+        groupDraws  : p.groupDraws  || 0,
+        groupPF     : p.groupPF     || 0,
+        groupPA     : p.groupPA     || 0,
+        totalScore      : p.totalScore      != null ? p.totalScore      : null,
+        matchPoints     : p.matchPoints     != null ? p.matchPoints     : null,
+        placementScore  : p.placementScore  != null ? p.placementScore  : null,
+      };
+    }),
+
+    groups : groups.map(function(g) {
+      return { name: g.name, letter: g.letter, playerIds: g.playerIds.slice() };
+    }),
+
+    matches : matches.map(function(m) {
+      return {
+        id        : m.id,
+        round     : m.round,
+        court     : m.court     || null,
+        player1   : m.player1,
+        player2   : m.player2   || null,
+        winner    : m.winner    || null,
+        score1    : m.score1    != null ? m.score1 : null,
+        score2    : m.score2    != null ? m.score2 : null,
+        completed : m.completed || false,
+        bye       : m.bye       || false,
+        type      : m.type      || 'normal',
+        group     : m.group     || null,
+        koRound   : m.koRound   || null,
+        koSlot    : m.koSlot    != null ? m.koSlot : null,
+        slotKey   : m.slotKey   || null,
+        label     : m.label     || null,
+      };
+    }),
+
+    knockoutSize    : knockoutSize,
+    qualifiedIds    : qualifiedIds.slice(),
+    placementRounds : JSON.parse(JSON.stringify(placementRounds || {})),
+    adminGroupOrder : JSON.parse(JSON.stringify(adminGroupOrder  || {})),
+
+    standings : (function() {
+      if (!tournamentFinished) return [];
+      try {
+        var fs = computeFinalStandings();
+        return fs.map(function(p) {
+          return {
+            rank    : p.finalRank,
+            name    : p.name,
+            member1 : p.member1 || '',
+            member2 : p.member2 || '',
+            bracket : p.bracket || '',
+            wins    : p.wins    || 0,
+            losses  : p.losses  || 0,
+            points  : p.totalScore || 0,
+          };
+        });
+      } catch(e) { return []; }
+    })(),
+  };
+}
+
+function publishToViewer() {
+  var payload;
+  try {
+    payload = buildPublishPayload();
+  } catch(err) {
+    showToast('Payload error: ' + err.message, true);
+    return;
+  }
+
+  showToast('Publishing…');
+  var publishBtn = document.getElementById('publishBtn');
+  if (publishBtn) {
+    publishBtn.disabled    = true;
+    publishBtn.textContent = 'Publishing…';
+  }
+
+  fetch(GAS_URL, {
+    method  : 'POST',
+    redirect: 'follow',
+    headers : { 'Content-Type': 'text/plain' },
+    body    : JSON.stringify({ action: 'publish', payload: payload }),
+  })
+  .then(function(r) { return r.text(); })
+  .then(function(raw) {
+    var res;
+    try { res = JSON.parse(raw); } catch(e) { throw new Error('Bad response: ' + raw.slice(0,120)); }
+    if (res.ok) {
+      showToast('✓ Published — viewer updated');
+      if (publishBtn) {
+        publishBtn.disabled    = false;
+        publishBtn.textContent = 'Publish to Viewer';
+      }
+      if (tournamentFinished && !resultsPublished) {
+        resultsPublished = true;
+        saveState();
+        renderAll();
+      }
+    } else {
+      throw new Error(res.error || 'Publish failed');
+    }
+  })
+  .catch(function(err) {
+    showToast('Publish failed: ' + err.message, true);
+    if (publishBtn) {
+      publishBtn.disabled    = false;
+      publishBtn.textContent = 'Publish to Viewer';
+    }
+  });
+}
+
+
+
+
+
+
 function closeFinalOverlay() { document.getElementById('finalOverlay').classList.add('hidden'); }
 function viewFinalBracket() { closeFinalOverlay(); switchToTab('bracket'); renderBracket(); }
 
@@ -2990,14 +3128,19 @@ function viewFinalBracket() { closeFinalOverlay(); switchToTab('bracket'); rende
 ===================================================== */
 function buildFinishHTML() {
   if (tournamentFinished) {
-    if (resultsPublished) return '<div class="publish-banner"><div><strong>✅ Results Published</strong><small>Leaderboard updated</small></div></div><button class="btn btn-green btn-full" style="opacity:.6;cursor:not-allowed;" disabled>✓ Published</button>';
-    return '<button class="btn btn-primary btn-full" onclick="askPublish()">🏆 Publish Results</button>'
-      +'<button class="btn btn-ghost btn-full" style="margin-top:6px;" onclick="showFinalSummary()">View Results</button>'
-      +'<button class="btn btn-ghost btn-full" style="margin-top:6px;" onclick="exportTournamentCSV()">⬇ Download CSV</button>';
+    var pubBtn = '<button id="publishBtn" class="btn btn-primary btn-full" onclick="publishToViewer()">📡 Publish to Viewer</button>';
+    if (resultsPublished) {
+      pubBtn = '<button class="btn btn-green btn-full" style="opacity:.6;cursor:not-allowed;" disabled>✓ Published to Viewer</button>';
+    }
+    return pubBtn
+      + '<button class="btn btn-ghost btn-full" style="margin-top:6px;" onclick="showFinalSummary()">🏆 View Results</button>'
+      + '<button class="btn btn-ghost btn-full" style="margin-top:6px;" onclick="exportTournamentCSV()">⬇ Download CSV</button>';
   }
   if (!tournamentStarted) return null;
-  return '<button class="btn btn-ghost btn-full" onclick="askFinish()">End Tournament</button>';
+  return '<button id="publishBtn" class="btn btn-ghost btn-full" onclick="publishToViewer()" style="margin-bottom:6px;">📡 Publish Live Update</button>'
+    + '<button class="btn btn-ghost btn-full" onclick="askFinish()">End Tournament</button>';
 }
+
 
 function updateFinishButton(area) {
   var id = area==='Setup' ? 'finishAreaSetup' : 'finishAreaSetup';
