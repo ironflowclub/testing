@@ -487,6 +487,11 @@ header{position:sticky;top:0;z-index:50;background:rgba(14,15,19,.92);backdrop-f
   .qual-reason-text{font-size:11px;}
 }
 
+.chip-assign-select{-webkit-appearance:none;appearance:none;border:1px solid var(--stroke2);background:var(--surface3);color:var(--ink2);font-family:var(--fb);font-size:11px;font-weight:600;padding:4px 8px;border-radius:var(--r-sm);cursor:pointer;max-width:90px;}
+.chip-assign-select:focus{outline:none;border-color:var(--gold);}
+.mobile-assign-hint{display:none;font-size:11px;color:var(--ink3);text-align:center;padding:6px 0 2px;}
+@media(hover:none)and(pointer:coarse){.chip-handle{display:none;}.mobile-assign-hint{display:block;}}
+
 
 </style>
 </head>
@@ -820,6 +825,14 @@ header{position:sticky;top:0;z-index:50;background:rgba(14,15,19,.92);backdrop-f
   </div>
 </div>
 
+<div class="court-alert" id="courtAlert">
+  <span style="font-size:18px;">🏸</span>
+  <div style="flex:1;min-width:0;">
+    <div id="courtAlertTitle" style="font-size:12px;font-weight:700;color:var(--ink);"></div>
+    <div id="courtAlertSub" style="font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+  </div>
+</div>
+
 <div class="burst-overlay" id="burstOverlay"></div>
 <div id="toast" class="toast"></div>
 
@@ -1067,7 +1080,6 @@ function p2(n) { return String(n).padStart(2,'0'); }
    NAVIGATION
 ===================================================== */
 function showScreen(screen, btn) {
-  // Block access to tabs if setup incomplete
   if (!groupsLocked && !['setup'].includes(screen)) {
     showToast('Lock groups first to start the tournament', true);
     return;
@@ -1075,6 +1087,20 @@ function showScreen(screen, btn) {
   if (screen === 'queue' && phase === 'setup' && !tournamentStarted) {
     showToast('Tournament not started yet', true); return;
   }
+
+  // If mid admin-review, allow viewing other tabs but show a return banner
+  // and redirect back to review screen when returning to queue/setup
+  if (reviewPhase && (screen === 'queue' || screen === 'setup')) {
+    showAdminReviewScreen();
+    showToast('Complete admin review first — then you can switch tabs');
+    return;
+  }
+  if (placementSeedPhase && (screen === 'queue' || screen === 'setup')) {
+    showPlacementSeedScreen();
+    showToast('Complete seeding first — then you can switch tabs');
+    return;
+  }
+
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   var screenEl = document.getElementById(screen + 'Screen');
@@ -1088,6 +1114,10 @@ function showScreen(screen, btn) {
 }
 
 function switchToTab(name) {
+  // Mid-flow phases: redirect to their screens, don't get lost
+  if (reviewPhase) { showAdminReviewScreen(); return; }
+  if (placementSeedPhase) { showPlacementSeedScreen(); return; }
+
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
   var tab = document.querySelector('[data-tab="' + name + '"]');
@@ -1257,6 +1287,14 @@ function renderSetupScreen() {
 function chipHTML(p, fromGroup) {
   var grpColors = { A:'grp-a', B:'grp-b', C:'grp-c', D:'grp-d' };
   var tagCls = fromGroup ? ('player-tag ' + grpColors[fromGroup]) : 'player-tag unassigned';
+  // Dropdown for mobile tap-to-assign
+  var selectOpts = '<option value="">' + (fromGroup ? '— move —' : '— assign —') + '</option>'
+    + ['A','B','C','D'].map(function(l) {
+        return '<option value="' + l + '"' + (fromGroup===l?' selected':'') + '>Group ' + l + '</option>';
+      }).join('')
+    + (fromGroup ? '<option value="pool">Pool</option>' : '');
+  var selectEl = '<select class="chip-assign-select" onchange="mobileAssign(' + p.id + ',\'' + (fromGroup||'') + '\',this.value)">' + selectOpts + '</select>';
+
   return '<div class="group-player-chip" draggable="true"'
     + ' ondragstart="chipDragStart(event,' + p.id + ',\'' + (fromGroup||'') + '\')"'
     + ' ondragend="chipDragEnd(event)">'
@@ -1265,10 +1303,32 @@ function chipHTML(p, fromGroup) {
     + '<div class="chip-name">' + esc(p.name) + '</div>'
     + ((p.member1||p.member2) ? '<div class="chip-sub">' + esc(p.member1||'?') + ' & ' + esc(p.member2||'?') + '</div>' : '')
     + '</div>'
+    + selectEl
     + (fromGroup ? '<button style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:14px;flex-shrink:0;" onclick="removeFromGroup(' + p.id + ',\'' + fromGroup + '\')" title="Remove from group">×</button>' : '')
-    + '<span class="' + tagCls + '">' + (fromGroup ? 'Group ' + fromGroup : 'Pool') + '</span>'
     + '</div>';
 }
+
+
+function mobileAssign(pid, fromGroup, toValue) {
+  if (!toValue) return;
+  // Remove from current location
+  if (fromGroup) {
+    var og = groups.find(function(g) { return g.letter === fromGroup; });
+    if (og) og.playerIds = og.playerIds.filter(function(x) { return x !== pid; });
+  }
+  var p = getPlayer(pid);
+  if (toValue === 'pool') {
+    if (p) p.groupId = null;
+  } else {
+    var ng = groups.find(function(g) { return g.letter === toValue; });
+    if (ng && ng.playerIds.indexOf(pid) === -1) ng.playerIds.push(pid);
+    if (p) p.groupId = 'Group ' + toValue;
+  }
+  saveState();
+  renderSetupScreen();
+}
+
+
 
 function removeFromGroup(pid, letter) {
   if (groupsLocked) return;
@@ -1708,6 +1768,28 @@ function reviewPrev() {
   if (reviewStep > 0) { reviewStep--; saveState(); renderAdminReview(); }
 }
 
+function getQualificationReason(p, group, rank, order, adminDecided) {
+  if (!adminDecided) return { adminDecided: true, text: 'Admin decision (groups not confirmed)' };
+  var borderPid = rank === 0 ? order[1] : order[rank-1];
+  var borderP = getPlayer(borderPid);
+  if (!borderP) return { adminDecided: false, text: 'Clear ' + (rank===0?'1st':'2nd') + ' in ' + group.name + ' — no tiebreak needed' };
+
+  var ag = p.groupWins+p.groupLosses+p.groupDraws||1;
+  var bg = borderP.groupWins+borderP.groupLosses+borderP.groupDraws||1;
+  var aw = p.groupWins/ag, bw = borderP.groupWins/bg;
+  var aPDpg = (p.groupPF-p.groupPA)/ag, bPDpg = (borderP.groupPF-borderP.groupPA)/bg;
+  var aPFpg = p.groupPF/ag, bPFpg = borderP.groupPF/bg;
+
+  if (Math.abs(bw-aw)<0.0001 && Math.abs(bPDpg-aPDpg)<0.0001 && Math.abs(bPFpg-aPFpg)<0.0001) {
+    return { adminDecided: true, text: 'Tied with ' + borderP.name + ' on all stats — Admin decision' };
+  }
+  if (Math.abs(bw-aw)>0.0001) return { adminDecided: false, text: 'Qualified by Win % (' + Math.round(aw*100) + '% vs ' + Math.round(bw*100) + '%)' };
+  if (Math.abs(bPDpg-aPDpg)>0.0001) return { adminDecided: false, text: 'Qualified by Avg Point Differential (' + (aPDpg>=0?'+':'')+aPDpg.toFixed(1) + ' vs ' + (bPDpg>=0?'+':'')+bPDpg.toFixed(1) + ')' };
+  if (Math.abs(bPFpg-aPFpg)>0.0001) return { adminDecided: false, text: 'Qualified by Avg Points Scored (' + aPFpg.toFixed(1) + ' vs ' + bPFpg.toFixed(1) + ')' };
+  return { adminDecided: false, text: 'Qualified — ' + (rank===0?'1st':'2nd') + ' in ' + group.name };
+}
+
+
 /* =====================================================
    QUALIFICATION — from admin-confirmed order
 ===================================================== */
@@ -1716,23 +1798,30 @@ function finalizeQualification() {
   var qualified = [];
   var nonQualified = [];
 
+  // Collect 1st and 2nd place separately so seeds interleave:
+  // Seed 1=A1st, 2=B1st, 3=C1st, 4=D1st, 5=A2nd, 6=B2nd, 7=C2nd, 8=D2nd
+  var firstPlacers = [];
+  var secondPlacers = [];
+
   groups.forEach(function(g) {
     var order = adminGroupOrder[g.letter] || [];
     order.forEach(function(pid, idx) {
       var p = getPlayer(pid);
       if (!p) return;
-      if (idx < 2) {
-        p.bracket = 'knockout';
-        p.seed = qualified.length + 1;
-        // Determine qualification reason
-        p.qualReason = getQualificationReason(p, g, idx, order, adminGroupOrder['confirmed_' + g.letter]);
-        qualifiedIds.push(pid);
-        qualified.push(p);
-      } else {
-        p.bracket = 'placement';
-        nonQualified.push(p);
-      }
+      if (idx === 0) firstPlacers.push({ pid: pid, g: g, idx: idx, order: order });
+      else if (idx === 1) secondPlacers.push({ pid: pid, g: g, idx: idx, order: order });
+      else { p.bracket = 'placement'; nonQualified.push(p); }
     });
+  });
+
+  firstPlacers.concat(secondPlacers).forEach(function(entry, seedIdx) {
+    var p = getPlayer(entry.pid);
+    if (!p) return;
+    p.bracket = 'knockout';
+    p.seed = seedIdx + 1;
+    p.qualReason = getQualificationReason(p, entry.g, entry.idx, entry.order, adminGroupOrder['confirmed_' + entry.g.letter]);
+    qualifiedIds.push(entry.pid);
+    qualified.push(p);
   });
 
   knockoutSize = 8;
@@ -1741,12 +1830,13 @@ function finalizeQualification() {
   placementSeedPhase = true;
   placementSeedLocked = false;
   // Default seeding: stat-sorted
-  placementSeedOrder = nonQualified.sort(function(a,b) {
-    var ag=a.groupWins+a.groupLosses+a.groupDraws||1, bg=b.groupWins+b.groupLosses+b.groupDraws||1;
-    var aw=a.groupWins/ag, bw=b.groupWins/bg;
-    if (Math.abs(bw-aw)>0.0001) return bw-aw;
-    var aPD=(a.groupPF-a.groupPA)/ag, bPD=(b.groupPF-b.groupPA)/bg;
-    if (Math.abs(bPD-aPD)>0.0001) return bPD-aPD;
+  placementSeedOrder = nonQualified.sort(function(a, b) {
+    var ag = a.groupWins + a.groupLosses + a.groupDraws || 1;
+    var bg = b.groupWins + b.groupLosses + b.groupDraws || 1;
+    var aw = a.groupWins / ag, bw = b.groupWins / bg;
+    if (Math.abs(bw - aw) > 0.0001) return bw - aw;
+    var aPD = (a.groupPF - a.groupPA) / ag, bPD = (b.groupPF - b.groupPA) / bg;
+    if (Math.abs(bPD - aPD) > 0.0001) return bPD - aPD;
     return a.name.localeCompare(b.name);
   }).map(function(p) { return p.id; });
 
@@ -1754,30 +1844,6 @@ function finalizeQualification() {
   phase = 'placementSeed';
   saveState();
   showPlacementSeedScreen();
-}
-
-function getQualificationReason(p, group, rank, order, adminDecided) {
-  if (!adminDecided) return { adminDecided: true, text: 'Admin decision (groups not confirmed)' };
-  // Check if there was a statistical tie at the border (ranks 1/2 or 2/3)
-  var borderPid = rank === 0 ? order[1] : order[rank-1];
-  var borderP = getPlayer(borderPid);
-  if (!borderP) return { adminDecided: false, text: 'Clear ' + (rank===0?'1st':'2nd') + ' in ' + group.name + ' — no tiebreak needed' };
-
-  // Check if they were statistically tied
-  var ag = p.groupWins+p.groupLosses+p.groupDraws||1;
-  var bg = borderP.groupWins+borderP.groupLosses+borderP.groupDraws||1;
-  var aw = p.groupWins/ag, bw = borderP.groupWins/bg;
-  var aPDpg = (p.groupPF-p.groupPA)/ag, bPDpg = (borderP.groupPF-borderP.groupPA)/bg;
-  var aPFpg = p.groupPF/ag, bPFpg = borderP.groupPF/bg;
-
-  if (Math.abs(bw-aw)<0.0001 && Math.abs(bPDpg-aPDpg)<0.0001 && Math.abs(bPFpg-aPFpg)<0.0001) {
-    // They were fully tied — admin decided
-    return { adminDecided: true, text: 'Tied with ' + borderP.name + ' on all stats — Admin decision' };
-  }
-  if (Math.abs(bw-aw)>0.0001) return { adminDecided: false, text: 'Qualified by Win % (' + Math.round(aw*100) + '% vs ' + Math.round(bw*100) + '%)' };
-  if (Math.abs(bPDpg-aPDpg)>0.0001) return { adminDecided: false, text: 'Qualified by Avg Point Differential (' + (aPDpg>=0?'+':'')+aPDpg.toFixed(1) + ' vs ' + (bPDpg>=0?'+':'')+bPDpg.toFixed(1) + ')' };
-  if (Math.abs(bPFpg-aPFpg)>0.0001) return { adminDecided: false, text: 'Qualified by Avg Points Scored (' + aPFpg.toFixed(1) + ' vs ' + bPFpg.toFixed(1) + ')' };
-  return { adminDecided: false, text: 'Qualified — ' + (rank===0?'1st':'2nd') + ' in ' + group.name };
 }
 
 /* =====================================================
@@ -1875,19 +1941,31 @@ function placeSeedDragEnd() { _placeSeedDragSrc = null; }
 
 function confirmPlacementSeeding() {
   placementSeedLocked = true;
+  placementSeedPhase = false;  // clear BEFORE switchToTab so guard doesn't redirect
+  reviewPhase = false;          // belt and braces
+
   // Assign nonQualSeed
   placementSeedOrder.forEach(function(pid, idx) {
     var p = getPlayer(pid);
     if (p) p.nonQualSeed = idx + 1;
   });
+
   generateNonQualPlacementMatches();
   phase = 'knockout';
-  placementSeedPhase = false;
   generateFirstKnockoutRound();
   fillFreeCourts();
   saveState();
+
+  // Manually switch without going through the guarded switchToTab
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  var tab = document.querySelector('[data-tab="queue"]');
+  if (tab) tab.classList.add('active');
+  var screenEl = document.getElementById('queueScreen');
+  if (screenEl) screenEl.classList.add('active');
+
   renderAll();
-  switchToTab('queue');
+  renderQueueScreen();
   showToast('🏆 Knockout started! ' + knockoutSize + '-team bracket + placement matches ready.');
 }
 
@@ -2790,6 +2868,20 @@ function renderBracket() {
     pms.filter(function(m){return !m.bye;}).forEach(function(m){html+=bracketMatchRow(m);});
     html += '</div>';
   });
+
+  // Non-qualified placement play-offs (9th/10th, 11th/12th, etc.)
+  var nqSlotsSeen={};
+  matches.forEach(function(m){ if(m.type==='nonqual_placement'&&m.slotKey) nqSlotsSeen[m.slotKey]=true; });
+  var nqSlotKeys=Object.keys(nqSlotsSeen).sort();
+  if (nqSlotKeys.length) {
+    html += '<div class="bracket-round"><div class="bracket-round-header"><span>Placement Play-offs</span><span class="round-badge">'+nqSlotKeys.length+' matches</span></div>';
+    nqSlotKeys.forEach(function(slot) {
+      var pms=matches.filter(function(m){return m.slotKey===slot&&!m.bye;});
+      pms.forEach(function(m){html+=bracketMatchRow(m);});
+    });
+    html += '</div>';
+  }
+
   html += '</div>';
   wrapper.innerHTML = html;
 }
@@ -2939,6 +3031,15 @@ function updateStatusBar() {
   else if (phase==='knockout') { dot.className='status-dot live'; text.textContent='Knockout'; }
 }
 
+
+function koRoundLabel(koRound) {
+  var remaining = knockoutSize / Math.pow(2, koRound - 1);
+  if (remaining <= 2) return 'Final';
+  if (remaining <= 4) return 'Semi-Final';
+  if (remaining <= 8) return 'Quarter-Final';
+  return 'Round of ' + remaining;
+}
+
 /* =====================================================
    TEAM DETAIL
 ===================================================== */
@@ -2957,11 +3058,24 @@ function openTeamDetail(playerId) {
   var avgPD = (pd / gp).toFixed(2);
   var avgPF = (p.groupPF / gp).toFixed(2);
 
-  document.getElementById('tdW').textContent = p.groupWins || 0;
-  document.getElementById('tdD').textContent = p.groupDraws || 0;
-  document.getElementById('tdL').textContent = p.groupLosses || 0;
-    // document.getElementById('tdPF').textContent = p.groupPF || 0;
-  document.getElementById('tdPA').textContent = p.groupPA || 0;
+  // All-tournament stats (group + knockout + placement)
+  var allMatches = matches.filter(function(m) {
+    return !m.bye && m.completed && (m.player1 === p.id || m.player2 === p.id);
+  });
+  var totalWins   = allMatches.filter(function(m) { return m.winner === p.id; }).length;
+  var totalLosses = allMatches.filter(function(m) { return m.winner && m.winner !== p.id; }).length;
+  var totalDraws  = allMatches.filter(function(m) { return m.completed && !m.winner; }).length;
+  var totalPF = allMatches.reduce(function(sum, m) {
+    return sum + (m.player1 === p.id ? (m.score1 || 0) : (m.score2 || 0));
+  }, 0);
+  var totalPA = allMatches.reduce(function(sum, m) {
+    return sum + (m.player1 === p.id ? (m.score2 || 0) : (m.score1 || 0));
+  }, 0);
+
+  document.getElementById('tdW').textContent = totalWins;
+  document.getElementById('tdD').textContent = totalDraws;
+  document.getElementById('tdL').textContent = totalLosses;
+  document.getElementById('tdPA').textContent = totalPA;
 
   // var pdEl = document.getElementById('tdPD');
   // pdEl.textContent = (pd >= 0 ? '+' : '') + pd;
@@ -3026,7 +3140,7 @@ function renderTeamQualDetail(p) {
     if (eliminatedInKnockout) {
       html += '<div class="tb-step decided">'
         + '<span class="dot" style="background:var(--red-dim);color:var(--red);">✗</span>'
-        + '<span>Eliminated in Knockout (Round ' + p.knockoutElim + ')</span>'
+        + '<span>Knocked out at ' + koRoundLabel(p.knockoutElim) + ' stage</span>'
         + '<span class="decided-tag" style="background:var(--red-dim);color:var(--red);">Elim</span>'
         + '</div>';
       // Step 3: Placement
@@ -3216,9 +3330,11 @@ function triggerConfetti() {
 
 function showCourtAlert(title,sub) {
   var a=document.getElementById('courtAlert');
-  if (!a) return;
-  document.getElementById('courtAlertTitle').textContent=title;
-  document.getElementById('courtAlertSub').textContent=sub;
+  if (!a) { showToast(title + ' — ' + sub); return; }
+  var t=document.getElementById('courtAlertTitle');
+  var s=document.getElementById('courtAlertSub');
+  if(t) t.textContent=title;
+  if(s) s.textContent=sub;
   a.classList.add('show');
   clearTimeout(_courtAlertTimer);
   _courtAlertTimer=setTimeout(function(){a.classList.remove('show');},3000);
