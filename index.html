@@ -1907,13 +1907,24 @@ function renderPlacementSeed() {
           + ' ondragover="placeSeedDragOver(event,' + idx + ')"'
           + ' ondrop="placeSeedDrop(event,' + idx + ')"'
           + ' ondragend="placeSeedDragEnd()">';
+    var isAutoLast = (nonQualIds.length % 2 !== 0) && (idx === nonQualIds.length - 1);
     html += '<div class="rank-pos">' + (idx+1) + '</div>';
     html += '<div class="rank-info">';
-    html += '<div class="rank-name">' + esc(p.name) + ' <span style="font-size:10px;color:var(--ink3);">' + (p.groupId||'') + '</span></div>';
+    html += '<div class="rank-name">' + esc(p.name)
+        + ' <span style="font-size:10px;color:var(--ink3);">' + (p.groupId||'') + '</span>'
+        + (isAutoLast ? ' <span style="font-size:9px;font-weight:700;background:rgba(245,158,11,.15);color:var(--amber);padding:1px 7px;border-radius:999px;margin-left:4px;">AUTO LAST · BYE</span>' : '')
+        + '</div>';
     html += '<div class="rank-stats">' + p.groupWins+'W '+(p.groupDraws||0)+'D '+p.groupLosses+'L · PD '+(pd>=0?'+':'')+pd+'</div>';
     html += '</div><span class="rank-handle">⠿</span></div>';
   });
   html += '</div></div></div>';
+  if (nonQualIds.length % 2 !== 0) {
+    html += '<div style="margin-top:10px;padding:10px 12px;border-radius:var(--r);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);font-size:12px;color:var(--ink2);">'
+        + '⚠ <strong style="color:var(--amber);">Odd number of teams</strong> — the last-seeded team ('
+        + esc(getName(nonQualIds[nonQualIds.length - 1]))
+        + ') receives a bye and is automatically assigned the last placement rank with no match played.'
+        + '</div>';
+}
 
   html += '<button class="btn btn-primary btn-full" onclick="confirmPlacementSeeding()">'
     + (placementSeedLocked ? '✓ Seeding Confirmed — Start Knockout' : 'Confirm Seeding & Start Knockout') + '</button>';
@@ -1986,12 +1997,16 @@ function generateNonQualPlacementMatches() {
     m.label = 'Rank ' + (9+i) + '/' + (10+i) + ' Play-off';
     matches.push(m);
   }
+
   // Odd one out — auto last
-  if (ids.length % 2 !== 0) {
+if (ids.length % 2 !== 0) {
     var lastId = ids[ids.length - 1];
     var lastP = getPlayer(lastId);
-    if (lastP) lastP.finalRank = 9 + ids.length - 1;
-  }
+    if (lastP) {
+        lastP.finalRank = 9 + ids.length - 1;
+        lastP.placementBye = true;  // flag for display purposes
+    }
+}
 }
 
 /* =====================================================
@@ -2878,13 +2893,20 @@ function renderBracket() {
   matches.forEach(function(m){ if(m.type==='nonqual_placement'&&m.slotKey) nqSlotsSeen[m.slotKey]=true; });
   var nqSlotKeys=Object.keys(nqSlotsSeen).sort();
   if (nqSlotKeys.length) {
-    html += '<div class="bracket-round"><div class="bracket-round-header"><span>Placement Play-offs</span><span class="round-badge">'+nqSlotKeys.length+' matches</span></div>';
+    var byePlayers = players.filter(function(p) { return p.placementBye; });
+    html += '<div class="bracket-round"><div class="bracket-round-header"><span>Placement Play-offs</span><span class="round-badge">'+nqSlotKeys.length+' match'+(nqSlotKeys.length!==1?'es':'')+'</span></div>';
     nqSlotKeys.forEach(function(slot) {
       var pms=matches.filter(function(m){return m.slotKey===slot&&!m.bye;});
       pms.forEach(function(m){html+=bracketMatchRow(m);});
     });
+    byePlayers.forEach(function(p) {
+        html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);background:rgba(245,158,11,.06);border:1px dashed rgba(245,158,11,.25);margin-top:6px;font-size:12px;font-weight:600;color:var(--amber);">'
+            + '<span style="font-size:14px;">🔀</span>'
+            + '<span>BYE — <strong>' + esc(p.name) + '</strong> · No opponent · Auto-assigned rank #' + (p.finalRank||'?') + '</span>'
+            + '</div>';
+    });
     html += '</div>';
-  }
+}
 
   html += '</div>';
   wrapper.innerHTML = html;
@@ -3000,7 +3022,8 @@ function buildPublishPayload() {
         nonQualSeed  : p.nonQualSeed  != null ? p.nonQualSeed  : null,
         hasBye       : p.hasBye       || false,
         knockoutElim : p.knockoutElim != null ? p.knockoutElim : null,
-        qualReason   : p.qualReason   || null,
+        qualReason     : p.qualReason     || null,
+        placementBye   : p.placementBye   || false,
         wins        : p.wins        || 0,
         losses      : p.losses      || 0,
         groupWins   : p.groupWins   || 0,
@@ -3333,10 +3356,16 @@ function renderTeamQualDetail(p) {
     html += '</div>';
 
     if (p.nonQualSeed) {
-      html += '<div style="font-size:11px;color:var(--ink3);margin-top:6px;">Placement seed: <strong style="color:var(--amber);">#' + p.nonQualSeed + '</strong> (set by admin)</div>';
+    html += '<div style="font-size:11px;color:var(--ink3);margin-top:6px;">Placement seed: <strong style="color:var(--amber);">#' + p.nonQualSeed + '</strong> (set by admin)</div>';
+    }
+    if (p.placementBye) {
+        html += '<div style="margin-top:10px;padding:10px 12px;border-radius:var(--r);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);">'
+            + '<div style="font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">🔀 Placement Bye</div>'
+            + '<div style="font-size:12px;color:var(--ink2);line-height:1.5;">Odd number of non-qualified teams — no opponent available. Auto-assigned last placement rank with no match played.</div>'
+            + '</div>';
     }
     if (p.finalRank) {
-      html += '<div style="font-size:11px;color:var(--ink3);margin-top:3px;">Final rank: <strong style="color:var(--ink);">#' + p.finalRank + '</strong></div>';
+        html += '<div style="font-size:11px;color:var(--ink3);margin-top:6px;">Final rank: <strong style="color:var(--ink);">#' + p.finalRank + '</strong></div>';
     }
   }
 
@@ -3348,9 +3377,30 @@ function renderTeamMatchHistory(p) {
   var playerMatches = matches.filter(function(m) {
     return !m.bye && (m.player1===p.id||m.player2===p.id);
   });
-  if (!playerMatches.length) { list.innerHTML='<div style="font-size:12px;color:var(--ink3);text-align:center;padding:12px;">No matches played yet</div>'; return; }
+  if (!playerMatches.length) {
+    if (p.placementBye) {
+      list.innerHTML = '<div class="mh-item">'
+        + '<div class="mh-dot" style="background:rgba(245,158,11,.15);color:var(--amber);">B</div>'
+        + '<div><div class="mh-opp">Placement Bye</div>'
+        + '<div class="mh-meta">No opponent — auto-assigned last rank</div></div>'
+        + '<div><div class="mh-score">—</div><div class="mh-pts">+0 pts</div></div>'
+        + '</div>';
+    } else {
+      list.innerHTML = '<div style="font-size:12px;color:var(--ink3);text-align:center;padding:12px;">No matches played yet</div>';
+    }
+    return;
+  }
 
-  list.innerHTML = playerMatches.map(function(m) {
+
+ var byeEntry = p.placementBye
+  ? '<div class="mh-item">'
+    + '<div class="mh-dot" style="background:rgba(245,158,11,.15);color:var(--amber);">B</div>'
+    + '<div><div class="mh-opp">Placement Bye</div>'
+    + '<div class="mh-meta">No opponent — auto-assigned last rank</div></div>'
+    + '<div><div class="mh-score">—</div><div class="mh-pts">+0 pts</div></div>'
+    + '</div>'
+  : '';
+list.innerHTML = playerMatches.map(function(m) {
     var isP1=m.player1===p.id;
     var oppId=isP1?m.player2:m.player1;
     var oppName=getName(oppId);
@@ -3368,7 +3418,7 @@ function renderTeamMatchHistory(p) {
       +'<div><div class="mh-score">'+myScore+' – '+oppScore+'</div>'
       +(m.completed?'<div class="mh-pts">+'+pts+' pt'+(pts!==1?'s':'')+'</div>':'<div class="mh-pts">pending</div>')
       +'</div></div>';
-  }).join('');
+  }).join('') + byeEntry;
 }
 
 function closeTeamDetail() { document.getElementById('teamDetailOverlay').classList.add('hidden'); }
