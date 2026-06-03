@@ -231,29 +231,28 @@
 </head>
 
 <body>
-
   <!-- LOADING SCREEN -->
-  <div id="loader" style="
-    position:fixed;inset:0;z-index:99999;
-    background:#0b0d1a;
-    display:flex;align-items:center;justify-content:center;
-    transition:opacity .6s cubic-bezier(.16,1,.3,1),visibility .6s;
-  ">
-    <div style="width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,193,7,.15);border-top-color:#ffc107;animation:spin .8s linear infinite;"></div>
-  </div>
+<div id="loader" style="
+  position:fixed;inset:0;z-index:99999;
+  background:#0b0d1a;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .6s cubic-bezier(.16,1,.3,1),visibility .6s;
+">
+  <div style="width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,193,7,.15);border-top-color:#ffc107;animation:spin .8s linear infinite;"></div>
+</div>
 
-  <style>
+<style>
 
-  @keyframes spin{to{transform:rotate(360deg);}}</style>
+@keyframes spin{to{transform:rotate(360deg);}}</style>
 
-  <script>
-    setTimeout(() => {
-      const loader = document.getElementById('loader');
-      loader.style.opacity = '0';
-      loader.style.visibility = 'hidden';
-      setTimeout(() => loader.remove(), 600);
-    }, 3000);
-  </script>
+<script>
+  setTimeout(() => {
+    const loader = document.getElementById('loader');
+    loader.style.opacity = '0';
+    loader.style.visibility = 'hidden';
+    setTimeout(() => loader.remove(), 600);
+  }, 3000);
+</script>
 
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <canvas class="confetti-canvas" id="confettiCanvas" aria-hidden="true"></canvas>
@@ -567,30 +566,18 @@
         entryEl.dataset.status   = entry.status || 'complete';
 
         entryEl.innerHTML = `
-          <div class="timeline-dot" aria-hidden="true"></div>
-          <article class="tourney-card${isUpcoming ? ' upcoming' : ''}" aria-label="${escHtml(entry.month)} Tournament">
-            <div class="tourney-card-inner">
-              <div class="tourney-card-main">
-                <div class="tourney-date">${escHtml(entry.month)}</div>
-                <h3 class="tourney-names" ${isUpcoming ? 'style="color:rgba(17,20,28,.35)"' : ''}>
-                  ${isUpcoming ? 'To Be Determined' : escHtml(entry.team || '—')}
-                </h3>
-                <p class="tourney-event-label">IFC Badminton Championship · Men's Doubles</p>
-                <div class="tourney-pills">
-                  ${entry.venue ? `
-                  <span class="tourney-pill">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    ${escHtml(entry.venue)}
-                  </span>` : ''}
-                  ${entry.date ? `
-                  <span class="tourney-pill">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    ${escHtml(entry.date)}
-                  </span>` : ''}
-                </div>
-              </div>
+        <div class="timeline-dot" aria-hidden="true"></div>
+        <article class="tourney-card${isUpcoming ? ' upcoming' : ''}" aria-label="${escHtml(entry.month)} Tournament">
+          <div class="tourney-card-inner">
+            <div class="tourney-card-main">
+              <div class="tourney-date">${escHtml(entry.month)}</div>
+              <h3 class="tourney-names" ${isUpcoming ? 'style="color:rgba(17,20,28,.35)"' : ''}>
+                ${isUpcoming ? 'To Be Determined' : escHtml(entry.team || '—')}
+              </h3>
+              <p class="tourney-event-label">IFC Badminton Championship · Men's Doubles</p>
             </div>
-          </article>`;
+          </div>
+        </article>`;
 
         timelineWrap.appendChild(entryEl);
       });
