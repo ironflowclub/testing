@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="IFC Badminton Championship — A competitive doubles tournament by IRONFLOW CLUB in Sharjah." />
+  <meta name="theme-color" content="#ffc107" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="IFC Badminton Championship 2026 — IRONFLOW CLUB" />
+  <meta property="og:description" content="Join the IFC Badminton Championship. Competitive men's doubles tournament in Sharjah." />
+  <meta property="og:url" content="https://ironflowclub.com/badminton" />
+  <meta property="og:site_name" content="IRONFLOW CLUB" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="IFC Badminton Championship 2026" />
+  <meta name="twitter:description" content="Competitive men's doubles badminton tournament in Sharjah." />
+  <link rel="canonical" href="https://ironflowclub.com/badminton" />
+  <title>IFC Badminton Championship · IRONFLOW CLUB</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" /></noscript>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+    body { margin: 0; }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; }
+
+    :root {
+      --bg: #fbfbfd;
+      --ink: rgba(17,20,28,.94);
+      --text: rgba(17,20,28,.88);
+      --muted: rgba(17,20,28,.62);
+      --muted-2: rgba(17,20,28,.56);
+      --accent: #ffc107;
+      --accent-2: #ff9800;
+      --gold-text: rgba(130,90,0,.95);
+      --stroke: rgba(17,20,28,.10);
+      --stroke-2: rgba(17,20,28,.18);
+      --success: #22c55e;
+      --success-text: #15803d;
+      --dark-bg: #0b0d1a;
+      --dark-surface: #1c1f3a;
+      --space-xs: 4px; --space-sm: 8px; --space-md: 16px;
+      --space-lg: 28px; --space-xl: 48px; --space-2xl: 80px;
+      --radius: 22px; --radius-lg: 28px; --radius-sm: 16px; --pill: 999px;
+      --shadow: 0 22px 70px rgba(17,20,28,.10);
+      --shadow-soft: 0 14px 40px rgba(17,20,28,.08);
+      --shadow-heavy: 0 30px 80px rgba(17,20,28,.12);
+      --container: 1120px; --pad: 18px; --nav-h: 72px;
+      --ease-out: cubic-bezier(.16,1,.3,1);
+      --ease-bounce: cubic-bezier(.34,1.56,.64,1);
+      --duration: .35s;
+      --font-display: Outfit, system-ui, sans-serif;
+      --font-body: Inter, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body); color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 18% 0%, rgba(255,193,7,.18), transparent 55%),
+        radial-gradient(900px 650px at 100% 100%, rgba(255,152,0,.06), transparent 52%),
+        linear-gradient(180deg, #fff 0%, var(--bg) 70%), var(--bg);
+      line-height: 1.65; -webkit-font-smoothing: antialiased;
+      padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+    }
+
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .skip-link { position:absolute; top:-100%; left:var(--pad); padding:12px 24px; background:var(--accent); color:#141414; border-radius:var(--pill); font-family:var(--font-display); font-weight:700; font-size:14px; z-index:100; transition:top .2s var(--ease-out); }
+    .skip-link:focus { top:12px; }
+    .container { width:min(var(--container),100%); margin-inline:auto; padding-inline:var(--pad); }
+
+    /* NAV */
+    header { position:sticky; top:0; z-index:50; background:rgba(251,251,253,.82); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid var(--stroke); }
+    .nav { height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand-text strong { font-family:var(--font-display); font-weight:800; letter-spacing:-.01em; color:var(--ink); font-size:15px; }
+    .brand-text small { display:block; font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-text); margin-top:1px; }
+    .nav-home-btn { display:inline-flex; align-items:center; gap:6px; height:38px; padding:0 16px; border-radius:var(--pill); border:1px solid rgba(17,20,28,.14); background:rgba(255,255,255,.88); font-family:var(--font-display); font-weight:700; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:rgba(17,20,28,.88); box-shadow:0 4px 16px rgba(17,20,28,.07); transition:background .25s var(--ease-out),border-color .25s var(--ease-out),color .25s var(--ease-out),box-shadow .25s var(--ease-out),transform .25s var(--ease-out); -webkit-tap-highlight-color:transparent; user-select:none; white-space:nowrap; }
+    .nav-home-btn:hover { background:#fff; border-color:rgba(255,193,7,.50); color:var(--gold-text); box-shadow:0 6px 22px rgba(255,193,7,.16); transform:translateY(-1px); }
+    .nav-home-btn:active { transform:scale(.96); }
+    @media (max-width:360px) { .nav-home-btn span{display:none;} .nav-home-btn{width:38px;padding:0;justify-content:center;} }
+
+    /* BUTTONS */
+    .btn { min-height:56px; border-radius:var(--pill); display:inline-flex; align-items:center; justify-content:center; padding:14px 28px; border:1px solid transparent; font-family:var(--font-display); font-weight:800; font-size:11px; letter-spacing:.18em; text-transform:uppercase; transition:all .25s var(--ease-out); -webkit-tap-highlight-color:transparent; user-select:none; position:relative; overflow:hidden; }
+    .btn:active { transform:scale(.97); }
+    .btn-primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#141414; box-shadow:0 14px 40px rgba(255,193,7,.26); }
+    .btn-primary:hover { box-shadow:0 18px 50px rgba(255,193,7,.36); transform:translateY(-1px); }
+    .btn-primary::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent); animation:shimmer 3.5s 1.5s ease-in-out infinite; }
+    .btn-ghost { background:rgba(255,255,255,.88); border-color:rgba(17,20,28,.22); border-width:1.5px; color:rgba(17,20,28,.88); box-shadow:0 8px 24px rgba(17,20,28,.08); }
+    .btn-ghost:hover { background:rgba(255,255,255,1); border-color:rgba(17,20,28,.24); transform:translateY(-1px); }
+    .btn-cta-primary { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#141414; box-shadow:0 16px 44px rgba(255,193,7,.28); }
+    .btn-cta-ghost { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:rgba(255,255,255,.82); }
+    .btn-cta-ghost:hover { background:rgba(255,255,255,.14); }
+    @keyframes shimmer { 0%{left:-60%;} 30%,100%{left:130%;} }
+
+    /* REVEAL */
+    .reveal { opacity:0; transform:translateY(28px); transition:opacity .7s var(--ease-out),transform .7s var(--ease-out); }
+    .reveal.visible { opacity:1; transform:none; }
+    .reveal-up { opacity:0; transform:translateY(16px); transition:opacity .6s var(--ease-out),transform .6s var(--ease-out); transition-delay:var(--rd,0ms); }
+    .reveal-up.visible { opacity:1; transform:none; }
+
+    /* SECTION TYPOGRAPHY */
+    .section-kicker { font-size:10px; font-weight:800; letter-spacing:.32em; text-transform:uppercase; color:var(--gold-text); margin-bottom:14px; }
+    .section-title { font-family:var(--font-display); font-weight:800; font-size:clamp(28px,6vw,42px); letter-spacing:-.025em; color:var(--ink); margin-bottom:var(--space-xl); line-height:1.15; }
+    .section-divider { width:60px; height:2px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:1px; margin-top:10px; }
+    .event-status-open { color:var(--success-text); font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+
+    /* HERO */
+    .hero { padding:clamp(70px,14vh,120px) var(--pad) 0; text-align:center; position:relative; overflow:hidden; }
+    .hero::before { content:''; position:absolute; top:-40px; left:50%; transform:translateX(-50%); width:600px; height:600px; background:radial-gradient(circle,rgba(255,193,7,.12) 0%,transparent 70%); pointer-events:none; }
+    .hero-court-lines { position:absolute; inset:0; pointer-events:none; overflow:hidden; opacity:.06; }
+    .hero-court-lines svg { width:100%; height:100%; }
+    .hero-kicker { display:inline-flex; align-items:center; gap:10px; margin-bottom:20px; font-size:10px; font-weight:800; letter-spacing:.36em; text-transform:uppercase; color:var(--gold-text); animation:fadeUp .6s var(--ease-out) both; }
+    .hero-kicker-dot { width:18px; height:1px; background:linear-gradient(90deg,transparent,var(--accent)); }
+    .hero-title { font-family:var(--font-display); font-weight:900; font-size:clamp(52px,13vw,96px); line-height:.96; letter-spacing:-.04em; color:var(--ink); margin-bottom:6px; animation:fadeUp .7s .08s var(--ease-out) both; }
+    .hero-subtitle { font-family:var(--font-display); font-weight:700; font-size:clamp(18px,4vw,28px); letter-spacing:.08em; text-transform:uppercase; background:linear-gradient(135deg,#8a5a00,var(--accent-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:var(--space-lg); animation:fadeUp .7s .16s var(--ease-out) both; }
+    .hero-desc { max-width:44ch; margin:0 auto var(--space-xl); color:var(--muted); font-size:16px; font-weight:500; line-height:1.7; animation:fadeUp .7s .24s var(--ease-out) both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:none;} }
+
+    /* COUNTDOWN */
+    .countdown-section { padding:70px var(--pad) var(--space-2xl); text-align:center; position:relative; }
+    .countdown-section::before { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:500px; height:400px; background:radial-gradient(ellipse,rgba(255,193,7,.08),transparent 70%); pointer-events:none; }
+    .countdown-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:520px; margin:0 auto; }
+    .countdown-unit { background:linear-gradient(135deg,rgba(255,255,255,.90),rgba(255,255,255,.70)); border:1px solid rgba(255,193,7,.20); border-radius:var(--radius); padding:20px var(--space-sm); box-shadow:0 16px 40px rgba(17,20,28,.09),0 1px 0 rgba(255,255,255,.8) inset; position:relative; overflow:hidden; transition:transform var(--duration) var(--ease-out),box-shadow var(--duration) var(--ease-out); }
+    .countdown-unit:hover { transform:translateY(-3px); box-shadow:0 24px 60px rgba(17,20,28,.14),0 0 0 1px rgba(255,193,7,.2); }
+    .countdown-unit::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(255,193,7,.6),transparent); }
+    .countdown-num { display:block; font-family:var(--font-display); font-weight:900; font-size:clamp(28px,8vw,48px); letter-spacing:-.04em; line-height:1; color:var(--ink); margin-bottom:var(--space-sm); }
+    .countdown-num.flip { animation:numFlip .3s var(--ease-out); }
+    @keyframes numFlip { 0%{transform:translateY(-8px);opacity:.3;} 100%{transform:none;opacity:1;} }
+    .countdown-label { font-size:8px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:var(--muted-2); }
+
+    /* EVENT CARD */
+    .event-card-wrap { padding:0 var(--pad) 60px; animation:fadeUp .8s .32s var(--ease-out) both; }
+    .event-card { max-width:480px; margin:0 auto; background:rgba(255,255,255,.94); border:1px solid rgba(255,193,7,.25); border-radius:var(--radius-lg); box-shadow:var(--shadow-heavy),0 0 0 1px rgba(255,255,255,.6) inset,0 1px 0 rgba(255,255,255,.9) inset; overflow:hidden; position:relative; }
+    .event-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent)); }
+    .event-card-header { padding:var(--space-lg) var(--space-lg) 20px; border-bottom:1px solid rgba(17,20,28,.07); }
+    .event-tag { font-size:9px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; color:var(--gold-text); margin-bottom:var(--space-sm); }
+    .event-card-title { font-family:var(--font-display); font-weight:800; font-size:22px; letter-spacing:-.02em; color:var(--ink); line-height:1.2; }
+    .event-details { padding:20px var(--space-lg); display:grid; grid-template-columns:1fr 1fr; gap:var(--space-md); }
+    .event-detail { display:flex; flex-direction:column; gap:3px; }
+    .event-detail-label { font-size:9px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:var(--muted-2); }
+    .event-detail-value { font-family:var(--font-display); font-weight:700; font-size:14px; color:var(--ink); }
+    .event-reg-badge { display:inline-flex; align-items:center; gap:6px; padding:var(--space-xs) 10px; border-radius:var(--pill); background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.25); font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--success-text); }
+    .reg-dot { width:6px; height:6px; border-radius:50%; background:var(--success); animation:pulse-dot 2s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.6;transform:scale(.85);} }
+    .event-card-actions { padding:0 var(--space-lg) var(--space-lg); display:grid; gap:10px; }
+
+    /* TIMELINE */
+    .timeline-section { padding:10px var(--pad) var(--space-2xl); }
+    .timeline { margin-top:40px; position:relative; padding-left:28px; }
+    .timeline::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; background:linear-gradient(to bottom,var(--accent),rgba(255,152,0,.3),transparent); }
+    .timeline-item { position:relative; padding-bottom:36px; }
+    .timeline-item:last-child { padding-bottom:0; }
+    .timeline-dot { position:absolute; left:-34px; top:8px; width:12px; height:12px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 0 0 3px rgba(255,193,7,.15),0 0 16px rgba(255,193,7,.3); }
+    .timeline-year { font-size:10px; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:var(--gold-text); margin-bottom:6px; }
+    .timeline-content { background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.65)); border:1px solid var(--stroke); border-radius:var(--radius); padding:20px 22px; box-shadow:var(--shadow-soft); transition:transform var(--duration) var(--ease-out); }
+    .timeline-content:hover { transform:translateX(4px); }
+    .timeline-event { font-family:var(--font-display); font-weight:800; font-size:16px; color:var(--ink); letter-spacing:-.01em; margin-bottom:var(--space-xs); }
+    .timeline-winner { font-size:13px; font-weight:500; color:var(--muted); }
+    .timeline-winner strong { color:var(--text); font-weight:600; }
+    .timeline-tbd { font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--gold-text); background:rgba(255,193,7,.10); border:1px solid rgba(255,193,7,.20); border-radius:var(--pill); padding:3px 10px; display:inline-block; margin-top:6px; }
+
+    /* CTA */
+    .cta-section { padding:60px var(--pad) 70px; text-align:center; }
+    .cta-inner { background:linear-gradient(135deg,var(--dark-surface),var(--dark-bg)); border-radius:var(--radius-lg); padding:52px var(--space-lg); position:relative; overflow:hidden; border:1px solid rgba(255,193,7,.15); box-shadow:0 30px 80px rgba(17,20,28,.22); }
+    .cta-inner::before { content:''; position:absolute; top:-60px; left:50%; transform:translateX(-50%); width:400px; height:300px; background:radial-gradient(ellipse,rgba(255,193,7,.12) 0%,transparent 70%); pointer-events:none; }
+    .cta-inner::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--accent),var(--accent-2),transparent); }
+    .cta-kicker { font-size:9px; font-weight:800; letter-spacing:.32em; text-transform:uppercase; color:rgba(255,193,7,.7); margin-bottom:var(--space-md); position:relative; }
+    .cta-title { font-family:var(--font-display); font-weight:800; font-size:clamp(26px,6vw,38px); letter-spacing:-.025em; color:rgba(255,255,255,.96); line-height:1.2; margin-bottom:14px; position:relative; }
+    .cta-text { color:rgba(255,255,255,.68); font-size:15px; font-weight:500; max-width:40ch; margin:0 auto 36px; line-height:1.65; position:relative; }
+    .cta-actions { display:grid; gap:12px; position:relative; }
+
+    /* FOOTER */
+    footer { padding:var(--space-lg) 0; background:#0e0f14; border-top:1px solid rgba(255,255,255,.08); }
+    .footer-inner { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+    .footer-brand { font-family:var(--font-display); font-size:18px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.90); font-weight:800; }
+    .footer-copy { font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.50); }
+
+    /* RESPONSIVE */
+    @media (min-width:640px) { :root{--pad:32px;} .countdown-num{font-size:52px;} .cta-actions{grid-template-columns:1fr 1fr;max-width:480px;margin-inline:auto;} }
+    @media (min-width:768px) { :root{--pad:40px;--nav-h:78px;} .footer-inner{flex-direction:row;justify-content:space-between;text-align:left;} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{transition:none !important;animation:none !important;} .reveal,.reveal-up{opacity:1 !important;transform:none !important;} }
+  </style>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header>
+    <nav class="container nav" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <div class="brand-text">
+          <strong>IRON FLOW CLUB</strong>
+          <small>Sharjah</small>
+        </div>
+      </a>
+      <div class="nav-actions">
+        <a class="nav-home-btn" href="index.html" aria-label="Go to homepage">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+            <path d="M9 21V12h6v9"/>
+          </svg>
+          Home
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main-content" aria-label="IFC Badminton Tournament">
+
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-court-lines" aria-hidden="true">
+        <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" fill="none" stroke="rgba(17,20,28,1)" stroke-width=".5">
+          <rect x="60" y="60" width="280" height="280"/>
+          <line x1="60" y1="200" x2="340" y2="200"/>
+          <line x1="200" y1="60" x2="200" y2="340"/>
+          <rect x="110" y="110" width="180" height="180"/>
+          <circle cx="200" cy="200" r="30"/>
+        </svg>
+      </div>
+      <div class="container">
+        <p class="hero-kicker">
+          <span class="hero-kicker-dot" aria-hidden="true"></span>
+          IFC Sport Series
+          <span class="hero-kicker-dot" style="transform:scaleX(-1);" aria-hidden="true"></span>
+        </p>
+        <h1 class="hero-title" id="hero-title">Badminton</h1>
+        <p class="hero-subtitle">Season 2026</p>
+        <p class="hero-desc">Where Passion Meets the Court.</p>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:10px;padding:32px var(--pad) 40px;max-width:320px;margin:0 auto;">
+      <a class="btn btn-primary" href="#champions">Upcoming Tournament</a>
+      <a class="btn btn-ghost" href="champions.html">Previous Winners</a>
+    </div>
+
+    <!-- COUNTDOWN -->
+    <section class="countdown-section reveal" aria-labelledby="countdown-heading">
+      <h2 class="sr-only" id="countdown-heading">Tournament Countdown</h2>
+      <!-- label updated dynamically -->
+      <p class="section-kicker" id="countdownLabel">Upcoming Tournament Countdown</p>
+      <div class="countdown-grid" id="countdownGrid" role="timer" aria-live="off" aria-label="Countdown to tournament">
+        <div class="countdown-unit">
+          <span class="countdown-num" id="cd-days" aria-hidden="true">--</span>
+          <span class="countdown-label" aria-hidden="true">Days</span>
+        </div>
+        <div class="countdown-unit">
+          <span class="countdown-num" id="cd-hours" aria-hidden="true">--</span>
+          <span class="countdown-label" aria-hidden="true">Hours</span>
+        </div>
+        <div class="countdown-unit">
+          <span class="countdown-num" id="cd-minutes" aria-hidden="true">--</span>
+          <span class="countdown-label" aria-hidden="true">Minutes</span>
+        </div>
+        <div class="countdown-unit">
+          <span class="countdown-num" id="cd-seconds" aria-hidden="true">--</span>
+          <span class="countdown-label" aria-hidden="true">Seconds</span>
+        </div>
+      </div>
+      <p class="sr-only" id="countdown-sr" aria-live="polite"></p>
+    </section>
+
+    <!-- EVENT CARD -->
+    <div class="event-card-wrap" role="region" aria-labelledby="event-title">
+      <div class="event-card">
+        <div class="event-card-header">
+          <p class="event-tag">Upcoming Tournament</p>
+          <h2 class="event-card-title" id="event-title">IFC Badminton Championship</h2>
+        </div>
+        <div class="event-details">
+          <div class="event-detail">
+            <span class="event-detail-label">Date</span>
+            <span class="event-detail-value" id="cardDate">—</span>
+          </div>
+          <div class="event-detail">
+            <span class="event-detail-label">Venue</span>
+            <span class="event-detail-value" id="cardVenue">—</span>
+          </div>
+          <div class="event-detail">
+            <span class="event-detail-label">Registration</span>
+            <span class="event-detail-value" id="cardReg">—</span>
+          </div>
+          <div class="event-detail">
+            <span class="event-detail-label">Format</span>
+            <span class="event-detail-value" id="cardFormat">—</span>
+          </div>
+        </div>
+        <div class="event-card-actions">
+          <a class="btn btn-ghost" href="viewer.html" aria-label="View tournament rules">View Rules</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMELINE / HALL OF CHAMPIONS -->
+    <section class="timeline-section" aria-labelledby="timeline-title" id="champions">
+      <div class="container">
+        <div class="section-header reveal">
+          <p class="section-kicker">History</p>
+          <h2 class="section-title" id="timeline-title" style="margin-bottom:0">Hall of Champions</h2>
+          <div class="section-divider" aria-hidden="true"></div>
+        </div>
+        <!-- populated dynamically; fallback hardcoded inside script -->
+        <div class="timeline" id="hallTimeline" role="list"></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" aria-labelledby="cta-title">
+      <div class="container">
+        <div class="cta-inner reveal">
+          <p class="cta-kicker">Join the Competition</p>
+          <h2 class="cta-title" id="cta-title">Ready for the<br>next challenge?</h2>
+          <p class="cta-text">Join the next IFC tournament and compete with the community.</p>
+          <div class="cta-actions">
+            <a class="btn btn-cta-primary" href="#register">Register for Tournament</a>
+            <a class="btn btn-cta-ghost" href="champions.html">View Previous Results</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer role="contentinfo">
+    <div class="container footer-inner">
+      <p class="footer-brand">IRONFLOW CLUB</p>
+      <p class="footer-copy">© <span id="footer-year">2026</span> · All rights reserved</p>
+    </div>
+  </footer>
+
+  <script>
+  'use strict';
+
+  /* ================================================================
+     CONFIG & FALLBACKS
+     If the server fetch fails, these hardcoded values are used.
+  ================================================================ */
+  const PROXY_URL = 'https://ironflow-proxy.syed-mujeebprojects.workers.dev';
+
+  const FALLBACK = {
+    tournament: {
+      name        : '',
+      format      : "Men's Doubles",
+      date        : '2026-06-14',
+      time        : '09:00',
+      venue       : 'ISC Muwaileh Sharjah',
+      registration: 'Open'
+    },
+  };
+
+  /* ================================================================
+     FETCH LIVE DATA
+  ================================================================ */
+  async function fetchBadmintonData() {
+    try {
+      const res = await fetch(PROXY_URL, {
+        method  : 'POST',
+        headers : { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body    : JSON.stringify({ action: 'getBadminton' }),
+        redirect: 'follow'
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data.success || !data.badminton) throw new Error('No data');
+      return data.badminton;
+    } catch (err) {
+      console.warn('[Badminton] Using fallback data:', err.message);
+      return null;
+    }
+  }
+
+  /* ================================================================
+     APPLY DATA TO PAGE
+  ================================================================ */
+  function applyTournamentData(t) {
+    // Event card
+    const nameEl = document.getElementById('event-title');
+    if (nameEl && t.name) nameEl.textContent = t.name;
+
+    const dateEl = document.getElementById('cardDate');
+    if (dateEl && t.date) {
+      try {
+        const parts = t.date.split('-');
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        dateEl.textContent = d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      } catch(e) { dateEl.textContent = t.date; }
+    }
+
+    const venueEl = document.getElementById('cardVenue');
+    if (venueEl && t.venue) venueEl.textContent = t.venue;
+
+    const formatEl = document.getElementById('cardFormat');
+    if (formatEl && t.format) formatEl.textContent = t.format;
+
+    const regEl = document.getElementById('cardReg');
+    if (regEl && t.registration) {
+      if (t.registration === 'Open') {
+        regEl.innerHTML = '<span class="event-status-open">Open</span>';
+      } else {
+        regEl.textContent = t.registration;
+      }
+    }
+
+    // Countdown label
+    const labelEl = document.getElementById('countdownLabel');
+    if (labelEl && t.name) {
+      // Extract month name for label
+      try {
+        const parts = t.date.split('-');
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const month = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        labelEl.textContent = 'IFC ' + month + ' Tournament Countdown';
+      } catch(e) {}
+    }
+
+    // Countdown target
+
+    if (t.date) {
+      try {
+        const timeStr = t.time || '09:00';
+        const target = new Date(`${t.date}T${timeStr}:00+04:00`).getTime();
+        startCountdown(target);
+        // Also fix the card display:
+        const d = new Date(`${t.date}T00:00:00+04:00`);
+        if (dateEl) dateEl.textContent = d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      } catch(e) { startCountdown(FALLBACK_TARGET); }
+    }
+  }
+
+  function applyHallData(hallEntries) {
+    const timeline = document.getElementById('hallTimeline');
+    if (!timeline || !hallEntries || hallEntries.length === 0) return;
+
+    timeline.innerHTML = '';
+    hallEntries.forEach((entry, i) => {
+      const delay = i * 100;
+      const item = document.createElement('div');
+      item.className = 'timeline-item reveal-up';
+      item.style.setProperty('--rd', delay + 'ms');
+      item.setAttribute('role', 'listitem');
+
+      const isTbd = entry.status === 'tbd' || !entry.winners;
+      item.innerHTML = `
+        <div class="timeline-dot" aria-hidden="true"></div>
+        <p class="timeline-year">${escHtml(entry.year)}</p>
+        <div class="timeline-content">
+          <p class="timeline-event">${escHtml(entry.event || 'IFC Championship')}</p>
+          ${isTbd
+            ? '<span class="timeline-tbd">To Be Determined</span>'
+            : `<p class="timeline-winner">Winner — <strong>${escHtml(entry.winners)}</strong></p>`
+          }
+        </div>`;
+      timeline.appendChild(item);
+    });
+
+    // Trigger reveal for newly added items
+    initReveal();
+  }
+
+  /* ================================================================
+     COUNTDOWN
+  ================================================================ */
+  // Fallback target: the hardcoded date from the original page
+  const FALLBACK_TARGET = new Date('2026-06-14T09:00:00+04:00').getTime();
+  let countdownInterval = null;
+  let srCounter = 0;
+
+  function startCountdown(target) {
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        ['cd-days','cd-hours','cd-minutes','cd-seconds'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '00';
+        });
+        clearInterval(countdownInterval);
+        return;
+      }
+      const days    = Math.floor(diff / 86400000);
+      const hours   = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      const pad = n => String(n).padStart(2, '0');
+
+      function setVal(id, val) {
+        const el = document.getElementById(id);
+        if (!el || el.textContent === val) return;
+        el.textContent = val;
+        el.classList.remove('flip');
+        void el.offsetWidth;
+        el.classList.add('flip');
+      }
+
+      setVal('cd-days',    pad(days));
+      setVal('cd-hours',   pad(hours));
+      setVal('cd-minutes', pad(minutes));
+      setVal('cd-seconds', pad(seconds));
+
+      srCounter++;
+      if (srCounter % 30 === 0 || srCounter === 1) {
+        const srEl = document.getElementById('countdown-sr');
+        if (srEl) srEl.textContent = `${days} days, ${hours} hours, ${minutes} minutes until the tournament.`;
+      }
+    }
+
+    tick();
+    countdownInterval = setInterval(tick, 1000);
+  }
+
+  /* ================================================================
+     REVEAL ANIMATIONS
+  ================================================================ */
+  function initReveal() {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal:not(.visible), .reveal-up:not(.visible)').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add('visible');
+      } else {
+        obs.observe(el);
+      }
+    });
+  }
+
+  /* ================================================================
+     UTILS
+  ================================================================ */
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ================================================================
+     INIT
+  ================================================================ */
+  (async function init() {
+    // Start reveal immediately for static elements
+    initReveal();
+
+    // Start fallback countdown right away so numbers show instantly
+    startCountdown(FALLBACK_TARGET);
+
+    // Apply hardcoded fallback hall entries while we wait for server
+    applyHallData(FALLBACK.hall);
+    applyTournamentData(FALLBACK.tournament);
+
+    // Fetch live data and override if available
+    const liveData = await fetchBadmintonData();
+    if (liveData) {
+      if (liveData.tournament) applyTournamentData(liveData.tournament);
+      if (liveData.hall && liveData.hall.length > 0) applyHallData(liveData.hall);
+    }
+
+    // Footer year
+    const yearEl = document.getElementById('footer-year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+  })();
+  </script>
+  <script>
+fetch('https://ironflow-proxy.syed-mujeebprojects.workers.dev', {
+  method: 'POST',
+  headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+  body: JSON.stringify({ action: 'getBadminton' })
+})
+.then(r => r.json())
+.then(d => {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div style="position:fixed;bottom:0;left:0;right:0;background:red;color:white;font-size:11px;padding:10px;z-index:9999;word-break:break-all;">
+      photo1: ${d.badminton?.featured?.player1Photo || 'EMPTY'}<br>
+      p1name: ${d.badminton?.featured?.player1 || 'EMPTY'}<br>
+      el_value: ${document.getElementById('featuredPhoto1')?.innerHTML || 'NO ELEMENT'}
+    </div>
+  `);
+})
+.catch(err => {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div style="position:fixed;bottom:0;left:0;right:0;background:red;color:white;font-size:11px;padding:10px;z-index:9999;">
+      FETCH ERROR: ${err.message}
+    </div>
+  `);
+});
+</script>
+
+</body>
+</html>
