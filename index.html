@@ -1316,11 +1316,13 @@ function chipHTML(p, fromGroup) {
   var grpColors = { A:'grp-a', B:'grp-b', C:'grp-c', D:'grp-d' };
   var tagCls = fromGroup ? ('player-tag ' + grpColors[fromGroup]) : 'player-tag unassigned';
   // Dropdown for mobile tap-to-assign
+  var gc = getGroupCount(players.length);
+  var activeGroups = ['A','B','C','D'].slice(0, gc);
   var selectOpts = '<option value="">' + (fromGroup ? '— move —' : '— assign —') + '</option>'
-    + ['A','B','C','D'].map(function(l) {
-        return '<option value="' + l + '"' + (fromGroup===l?' selected':'') + '>Group ' + l + '</option>';
-      }).join('')
-    + (fromGroup ? '<option value="pool">Pool</option>' : '');
+      + activeGroups.map(function(l) {
+          return '<option value="' + l + '"' + (fromGroup===l?' selected':'') + '>Group ' + l + '</option>';
+        }).join('')
+      + (fromGroup ? '<option value="pool">Pool</option>' : '');
   var selectEl = '<select class="chip-assign-select" onchange="mobileAssign(' + p.id + ',\'' + (fromGroup||'') + '\',this.value)">' + selectOpts + '</select>';
 
   return '<div class="group-player-chip" draggable="true"'
@@ -1332,7 +1334,9 @@ function chipHTML(p, fromGroup) {
     + ((p.member1||p.member2) ? '<div class="chip-sub">' + esc(p.member1||'?') + ' & ' + esc(p.member2||'?') + '</div>' : '')
     + '</div>'
     + selectEl
+
     + (fromGroup ? '<button style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:14px;flex-shrink:0;" onclick="removeFromGroup(' + p.id + ',\'' + fromGroup + '\')" title="Remove from group">×</button>' : '')
+    + '<button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;flex-shrink:0;padding:0 4px;" onclick="removePlayer(' + p.id + ')" title="Delete team">🗑</button>'
     + '</div>';
 }
 
