@@ -501,9 +501,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(14,15,19,.92);backdrop-f
   <div class="container">
     <div class="nav">
       <div class="brand">
-        <div class="brand-icon">IF</div>
         <div class="brand-text">
-          <strong>IRONFLOW</strong>
+          <strong></strong>
           <small>Tournament</small>
         </div>
       </div>
@@ -1222,11 +1221,18 @@ function renderSetupScreen() {
   // Size hint
   var hint = document.getElementById('sizeHint');
   var n = players.length;
+  // Show/hide group slots based on group count
+  var gc = getGroupCount(n);
+  document.getElementById('slotC').style.display = gc >= 3 ? '' : 'none';
+  document.getElementById('slotD').style.display = gc >= 4 ? '' : 'none';
   if (n < 4) {
     hint.innerHTML = 'Need <strong style="color:var(--gold);">at least 4 teams</strong> to start. Add more teams.';
   } else {
     var sizes = getBalancedSizes(n);
-    hint.innerHTML = '<strong style="color:var(--gold);">Required group sizes:</strong> A=' + sizes[0] + ', B=' + sizes[1] + ', C=' + sizes[2] + ', D=' + sizes[3]
+    var sizeLabels = ['A','B','C','D'].slice(0, gc).map(function(l, i) {
+    return l + '=' + sizes[i];
+    }).join(', ');
+    hint.innerHTML = '<strong style="color:var(--gold);">Required group sizes:</strong> ' + sizeLabels
       + ' — Drag teams from pool into groups.';
   }
 
@@ -1416,10 +1422,17 @@ function poolDrop(e) {
 /* =====================================================
    BALANCED GROUP SIZES
 ===================================================== */
+function getGroupCount(n) {
+  return n <= 11 ? 2 : 4;
+}
+
 function getBalancedSizes(n) {
-  var base = Math.floor(n / 4);
-  var rem = n % 4;
-  return [0,1,2,3].map(function(i) { return i < rem ? base + 1 : base; });
+  var count = getGroupCount(n);
+  var base  = Math.floor(n / count);
+  var rem   = n % count;
+  return Array.from({length: count}, function(_, i) {
+    return i < rem ? base + 1 : base;
+  });
 }
 
 function canLockGroups() {
@@ -1427,8 +1440,11 @@ function canLockGroups() {
   if (n < 4) return false;
   var unassigned = players.filter(function(p) { return !p.groupId; });
   if (unassigned.length > 0) return false;
+  var count = getGroupCount(n);
   var sizes = getBalancedSizes(n);
-  return groups.every(function(g, i) { return g.playerIds.length === sizes[i]; });
+  return groups.slice(0, count).every(function(g, i) {
+    return g.playerIds.length === sizes[i];
+  });
 }
 
 function getBalanceWarning() {
@@ -1436,11 +1452,12 @@ function getBalanceWarning() {
   if (n < 4) return 'Need at least 4 teams.';
   var unassigned = players.filter(function(p) { return !p.groupId; });
   if (unassigned.length > 0) return unassigned.length + ' team(s) still in pool. Assign all teams.';
+  var count = getGroupCount(n);
   var sizes = getBalancedSizes(n);
   var msgs = [];
-  groups.forEach(function(g, i) {
+  groups.slice(0, count).forEach(function(g, i) {
     if (g.playerIds.length !== sizes[i])
-      msgs.push('Group ' + g.letter + ' needs ' + sizes[i] + ' teams (has ' + g.playerIds.length + ')');
+      msgs.push('Group ' + g.letter + ' needs ' + sizes[i] + ' (has ' + g.playerIds.length + ')');
   });
   return msgs.join('; ');
 }
@@ -1466,8 +1483,10 @@ function lockGroups() {
 
     // Generate group matches
     matches = [];
-    groups.forEach(function(g) { generateGroupMatches(g); });
-
+    var gc = getGroupCount(players.length);
+    groups.slice(gc).forEach(function(g) { g.playerIds = []; });
+    groups.slice(0, gc).forEach(function(g) { generateGroupMatches(g); });
+    knockoutSize = players.length <= 8 ? 4 : 8;
     startTimer();
     fillFreeCourts();
     saveState();
@@ -1567,7 +1586,9 @@ function enterAdminReview() {
 function renderAdminReview() {
   var g = groups[reviewStep];
   var stepBadge = document.getElementById('reviewStepBadge');
-  if (stepBadge) stepBadge.textContent = (reviewStep+1) + '/4';
+  var gc = getGroupCount(players.length);
+  var qualsPerGroup = players.length <= 8 ? 2 : 4; 
+  if (stepBadge) stepBadge.textContent = (reviewStep+1) + '/' + gc;
 
   var order = adminGroupOrder[g.letter] || getGroupStatsSorted(g).map(function(p) { return p.id; });
   var ties = detectTies(g);
@@ -1576,7 +1597,8 @@ function renderAdminReview() {
 
   // Carousel progress
   html += '<div class="carousel-progress">';
-  for (var i = 0; i < 4; i++) {
+  for (var i = 0; i < gc; i++) {
+
     var cls = i < reviewStep ? 'done' : i === reviewStep ? 'active' : '';
     html += '<div class="carousel-dot ' + cls + '"></div>';
   }
@@ -1599,7 +1621,7 @@ function renderAdminReview() {
     var avgPD = (pd/gp).toFixed(1);
     var avgPF = (p.groupPF/gp).toFixed(1);
     var winPct = Math.round((p.groupWins/gp)*100);
-    var qual = idx < 2;
+    var qual = idx < qualsPerGroup;
     html += '<tr' + (qual ? ' class="qual-row"' : '') + '>';
     html += '<td class="num">' + (idx+1) + '</td>';
     html += '<td>' + esc(p.name) + (qual ? '<span class="qual-pill">Q</span>' : '') + '</td>';
@@ -1652,7 +1674,7 @@ function renderAdminReview() {
     var gp = p.groupWins+p.groupLosses+p.groupDraws||1;
     var pd = p.groupPF-p.groupPA;
     var avgPD = (pd/gp).toFixed(1);
-    var isQual = idx < 2;
+    var isQual = idx < qualsPerGroup;
     var posCls = idx===0 ? 'first' : idx===1 ? 'second qual' : '';
     html += '<div class="rank-item" data-idx="' + idx + '" data-pid="' + pid + '"'
           + ' draggable="true"'
@@ -1667,7 +1689,7 @@ function renderAdminReview() {
     html += '</div>';
     html += '<span class="rank-handle">⠿</span>';
     html += '</div>';
-    if (idx === 1 && order.length > 2) {
+    if (idx === qualsPerGroup - 1 && order.length > qualsPerGroup) {
       html += '<div class="qual-divider">↑ Qualified</div><div class="non-qual-divider">↓ Eliminated</div>';
     }
   });
@@ -1682,7 +1704,7 @@ function renderAdminReview() {
   html += '<div class="carousel-nav">';
   if (reviewStep > 0) html += '<button class="btn btn-ghost" onclick="reviewPrev()">← Back</button>';
   else html += '<div style="flex:1;"></div>';
-  if (reviewStep < 3) {
+  if (reviewStep < gc - 1) {
     html += '<button class="btn btn-primary" onclick="reviewNext(\'' + g.letter + '\')">Confirm Group ' + g.letter + ' →</button>';
   } else {
     html += '<button class="btn btn-primary" onclick="reviewNext(\'' + g.letter + '\')">Confirm & Proceed to Seeding →</button>';
@@ -1753,7 +1775,8 @@ function rankDragEnd() {
 
 function reviewNext(letter) {
   adminGroupOrder['confirmed_' + letter] = true;
-  if (reviewStep < 3) {
+  var gc = getGroupCount(players.length);
+  if (reviewStep < gc - 1) {
     reviewStep++;
     // Pre-populate next group if not yet set
     var ng = groups[reviewStep];
@@ -1804,31 +1827,41 @@ function finalizeQualification() {
 
   // Collect 1st and 2nd place separately so seeds interleave:
   // Seed 1=A1st, 2=B1st, 3=C1st, 4=D1st, 5=A2nd, 6=B2nd, 7=C2nd, 8=D2nd
-  var firstPlacers = [];
-  var secondPlacers = [];
+  var gc = getGroupCount(players.length);
+  var qualsPerGroup = players.length <= 8 ? 2 : 4;
 
-  groups.forEach(function(g) {
+  // Build qualifier slots interleaved: A1,B1,A2,B2,A3,B3...
+  var qualSlots = [];
+  for (var rank = 0; rank < qualsPerGroup; rank++) {
+    for (var gi = 0; gi < gc; gi++) {
+      qualSlots.push({ rank: rank, g: groups[gi] });
+    }
+  }
+
+  qualSlots.forEach(function(slot, seedIdx) {
+    var g = slot.g;
     var order = adminGroupOrder[g.letter] || [];
-    order.forEach(function(pid, idx) {
-      var p = getPlayer(pid);
-      if (!p) return;
-      if (idx === 0) firstPlacers.push({ pid: pid, g: g, idx: idx, order: order });
-      else if (idx === 1) secondPlacers.push({ pid: pid, g: g, idx: idx, order: order });
-      else { p.bracket = 'placement'; nonQualified.push(p); }
-    });
-  });
-
-  firstPlacers.concat(secondPlacers).forEach(function(entry, seedIdx) {
-    var p = getPlayer(entry.pid);
+    var pid = order[slot.rank];
+    if (!pid) return;
+    var p = getPlayer(pid);
     if (!p) return;
     p.bracket = 'knockout';
     p.seed = seedIdx + 1;
-    p.qualReason = getQualificationReason(p, entry.g, entry.idx, entry.order, adminGroupOrder['confirmed_' + entry.g.letter]);
-    qualifiedIds.push(entry.pid);
+    p.qualReason = getQualificationReason(p, g, slot.rank, order, adminGroupOrder['confirmed_' + g.letter]);
+    qualifiedIds.push(pid);
     qualified.push(p);
   });
 
-  knockoutSize = 8;
+  // Non-qualifiers
+  groups.slice(0, gc).forEach(function(g) {
+    var order = adminGroupOrder[g.letter] || [];
+    order.slice(qualsPerGroup).forEach(function(pid) {
+      var p = getPlayer(pid);
+      if (p) { p.bracket = 'placement'; nonQualified.push(p); }
+    });
+  });
+
+  knockoutSize = players.length <= 8 ? 4 : 8;
 
   // Enter placement seed phase
   placementSeedPhase = true;
@@ -2408,7 +2441,9 @@ function renderQueueScreen() {
     var phDesc=document.getElementById('phaseDesc');
     if (phase==='group') {
       if(phIcon) phIcon.textContent='🏸'; if(phName) phName.textContent='Group Stage';
-      if(phDesc) phDesc.textContent=groups.length+' groups · round-robin';
+      var gc = getGroupCount(players.length);
+      var qualsPerGroup = players.length <= 8 ? 2 : 4;
+      if(phDesc) phDesc.textContent = gc + ' groups · top ' + qualsPerGroup + ' per group advance · round-robin';
     } else if (phase==='adminReview'||phase==='placementSeed') {
       if(phIcon) phIcon.textContent='⚙️'; if(phName) phName.textContent='Admin Review';
       if(phDesc) phDesc.textContent='Confirm group rankings before knockout';
@@ -2685,7 +2720,8 @@ function renderStandings() {
 
 function renderGroupStandingsView(container) {
   var html = '';
-  groups.forEach(function(g) {
+  var gc = getGroupCount(players.length);
+  groups.slice(0, gc).forEach(function(g) {
     var standing = getGroupStatsSorted(g);
     html += '<div style="font-family:var(--ff);font-size:13px;font-weight:700;color:var(--ink);margin:14px 0 8px;">'+g.name+'</div>';
     html += '<div style="overflow-x:auto;margin-bottom:4px;"><table class="group-table">';
@@ -2695,7 +2731,8 @@ function renderGroupStandingsView(container) {
       var pd=p.groupPF-p.groupPA;
       var avgPD=(pd/gp).toFixed(1);
       var winPct=Math.round((p.groupWins/gp)*100);
-      var qual=idx<2;
+      var qualsPerGroup = players.length <= 8 ? 2 : 4;
+      var qual = idx < qualsPerGroup;
       html+='<tr'+(qual?' class="qual-row"':'')+'>'+
         '<td class="num">'+(idx+1)+'</td>'+
         '<td>'+esc(p.name)+(qual?'<span class="qual-pill">Q</span>':'')+'</td>'+
@@ -2838,7 +2875,8 @@ function renderBracket() {
   var doneM=matches.filter(function(m){return !m.bye&&m.completed;}).length;
   var pct=totalM?Math.round((doneM/totalM)*100):0;
   html += '<div class="bstats">';
-  html += bst(players.length,'Teams')+bst(groups.length,'Groups')+bst(doneM+'/'+totalM,'Matches')+bst(pct+'%','Done');
+  var gc = getGroupCount(players.length);
+  html += bst(players.length,'Teams')+bst(gc,'Groups')+bst(doneM+'/'+totalM,'Matches')+bst(pct+'%','Done');
   html += '</div>';
   html += '<div style="background:var(--surface);border:1px solid var(--stroke);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;font-weight:600;color:var(--ink2);">Progress</span><span style="font-family:var(--ff);font-size:13px;font-weight:700;color:var(--ink);">'+pct+'%</span></div>';
@@ -2848,7 +2886,8 @@ function renderBracket() {
   if (groups.length) {
     html += '<div class="bracket-round"><div class="bracket-round-header"><span>Group Stage</span><span class="round-badge">'+groups.length+' groups</span></div>';
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">';
-    groups.forEach(function(g) {
+    var gc = getGroupCount(players.length);
+    groups.slice(0, gc).forEach(function(g) {
       var st = getGroupStatsSorted(g);
       var colors={A:'var(--blue)',B:'var(--purple)',C:'var(--gold)',D:'var(--green)'};
       html += '<div style="background:var(--surface2);border:1px solid var(--stroke);border-radius:var(--r);padding:12px;">';
